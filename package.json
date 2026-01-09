@@ -1,0 +1,18 @@
+{
+  "name": "karina-rpg-quest",
+  "version": "1.0.0",
+  "description": "Professional 2.5D RPG game built with Phaser 3",
+  "main": "src/main.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": ["phaser", "rpg", "2d", "game", "javascript"],
+  "author": "Karina",
+  "license": "MIT",
+  "dependencies": {
+    "phaser": "^3.90.0",
+    "vite": "^7.3.1"
+  }
+}

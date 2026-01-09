@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Karina's RPG Quest - 2.5D Adventure</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html, body {
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+        }
+        body {
+            background: #1a1a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        #game-container {
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+        }
+
+        /* ===== VINYL SELECTOR STYLES ===== */
+        .vinyl-selector-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        .vinyl-selector-window {
+            background: linear-gradient(135deg, #2c1810 0%, #1a0f0a 100%);
+            border: 8px solid #8b4513;
+            border-radius: 12px;
+            box-shadow:
+                0 0 0 4px #daa520,
+                0 20px 60px rgba(0, 0, 0, 0.9),
+                inset 0 2px 4px rgba(218, 165, 32, 0.3);
+            padding: 40px;
+            min-width: 600px;
+            max-width: 800px;
+            font-family: 'Press Start 2P', monospace;
+        }
+
+        .vinyl-selector-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .vinyl-selector-header h2 {
+            color: #ffd700;
+            font-size: 24px;
+            text-shadow:
+                2px 2px 0 #8b4513,
+                4px 4px 8px rgba(0, 0, 0, 0.7);
+            letter-spacing: 2px;
+        }
+
+        .vinyl-carousel {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .carousel-arrow {
+            background: linear-gradient(135deg, #daa520 0%, #8b4513 100%);
+            border: 3px solid #ffd700;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 24px;
+            font-weight: bold;
+            width: 45px;
+            height: 45px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow:
+                0 4px 8px rgba(0, 0, 0, 0.5),
+                inset 0 2px 4px rgba(255, 255, 255, 0.2);
+            flex-shrink: 0;
+        }
+
+        .carousel-arrow:hover {
+            background: linear-gradient(135deg, #ffd700 0%, #daa520 100%);
+            transform: scale(1.1);
+            box-shadow:
+                0 6px 12px rgba(255, 215, 0, 0.6),
+                inset 0 2px 4px rgba(255, 255, 255, 0.3);
+        }
+
+        .carousel-arrow:active {
+            transform: scale(0.95);
+        }
+
+        .carousel-center {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .vinyl-cover {
+            width: 300px;
+            height: 300px;
+            object-fit: cover;
+            border: 6px solid #daa520;
+            border-radius: 8px;
+            box-shadow:
+                0 0 0 3px #8b4513,
+                0 10px 30px rgba(0, 0, 0, 0.8),
+                inset 0 2px 8px rgba(255, 255, 255, 0.1);
+            transition: opacity 0.3s ease;
+            image-rendering: pixelated;
+        }
+
+        .vinyl-title {
+            color: #ffd700;
+            font-size: 14px;
+            text-align: center;
+            text-shadow:
+                1px 1px 0 #8b4513,
+                2px 2px 4px rgba(0, 0, 0, 0.7);
+            max-width: 300px;
+            line-height: 1.6;
+        }
+
+        .vinyl-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .vinyl-hint {
+            color: #daa520;
+            font-size: 10px;
+            text-align: center;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+        }
+
+        .vinyl-select-btn {
+            background: linear-gradient(135deg, #228b22 0%, #006400 100%);
+            border: 4px solid #32cd32;
+            border-radius: 8px;
+            color: #fff;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 16px;
+            padding: 15px 40px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow:
+                0 4px 8px rgba(0, 0, 0, 0.5),
+                inset 0 2px 4px rgba(255, 255, 255, 0.2);
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+        }
+
+        .vinyl-select-btn:hover {
+            background: linear-gradient(135deg, #32cd32 0%, #228b22 100%);
+            transform: scale(1.05);
+            box-shadow:
+                0 6px 12px rgba(50, 205, 50, 0.6),
+                inset 0 2px 4px rgba(255, 255, 255, 0.3);
+        }
+
+        .vinyl-select-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* ===== BOOKSHELF OVERLAY STYLES ===== */
+        .bookshelf-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .bookshelf-window {
+            background: linear-gradient(135deg, #f5deb3 0%, #deb887 100%);
+            border: 8px solid #8b4513;
+            border-radius: 12px;
+            box-shadow:
+                0 0 0 4px #daa520,
+                0 20px 60px rgba(0, 0, 0, 0.9),
+                inset 0 2px 4px rgba(255, 255, 255, 0.3);
+            padding: 30px;
+            width: 90vw;
+            max-width: 600px;
+            max-height: 85vh;
+            overflow-y: auto;
+            font-family: 'Press Start 2P', monospace;
+        }
+
+        .bookshelf-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .bookshelf-header h2 {
+            color: #5d4037;
+            font-size: 18px;
+            text-shadow:
+                2px 2px 0 rgba(255, 255, 255, 0.5),
+                4px 4px 8px rgba(0, 0, 0, 0.3);
+            letter-spacing: 2px;
+        }
+
+        .book-carousel {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .book-cover-frame {
+            background: white;
+            padding: 8px;
+            border-radius: 6px;
+            box-shadow:
+                0 4px 12px rgba(0, 0, 0, 0.3),
+                inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .book-cover {
+            width: 200px;
+            height: 280px;
+            object-fit: contain;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            transition: opacity 0.3s ease;
+        }
+
+        .book-title {
+            color: #3e2723;
+            font-size: 11px;
+            text-align: center;
+            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.5);
+            max-width: 250px;
+            line-height: 1.5;
+            margin-top: 8px;
+            transition: opacity 0.3s ease;
+        }
+
+        .book-author {
+            color: #6d4c41;
+            font-size: 9px;
+            font-style: italic;
+            text-align: center;
+            text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.3);
+            transition: opacity 0.3s ease;
+        }
+
+        .bookshelf-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .bookshelf-hint {
+            color: #6d4c41;
+            font-size: 10px;
+            text-align: center;
+            text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.5);
+        }
+
+        .bookshelf-open-btn {
+            background: linear-gradient(135deg, #8b4513 0%, #5d4037 100%);
+            border: 3px solid #a0522d;
+            border-radius: 6px;
+            color: #fff;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 12px;
+            padding: 12px 30px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow:
+                0 4px 8px rgba(0, 0, 0, 0.5),
+                inset 0 2px 4px rgba(255, 255, 255, 0.2);
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+        }
+
+        .bookshelf-open-btn:hover {
+            background: linear-gradient(135deg, #a0522d 0%, #8b4513 100%);
+            transform: scale(1.05);
+            box-shadow:
+                0 6px 12px rgba(139, 69, 19, 0.6),
+                inset 0 2px 4px rgba(255, 255, 255, 0.3);
+        }
+
+        .bookshelf-open-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* ===== READING MODE STYLES ===== */
+        .bookshelf-window.reading-mode {
+            position: relative;
+            background-image: url('/assets/ui/paper_bg.jpeg');
+            background-size: 100% 100%;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-color: transparent;
+            width: 600px;
+            height: 750px;
+            padding: 120px 90px 80px 90px;
+            border: none;
+            box-shadow: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+
+        .book-pages {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            position: relative;
+            flex: 1;
+            margin-bottom: 0;
+            overflow: hidden;
+        }
+
+        .book-page {
+            flex: 1;
+            background: transparent;
+            padding: 0;
+            border-radius: 0;
+            box-shadow: none;
+            position: relative;
+            border: none;
+        }
+
+        .book-page::before {
+            display: none;
+        }
+
+        .left-page {
+            border: none;
+        }
+
+        .right-page {
+            border: none;
+        }
+
+        .book-spine {
+            display: none;
+        }
+
+        .page-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .reading-title {
+            color: #1a0f0a;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+            line-height: 1.4;
+            text-shadow: none;
+            font-family: 'Georgia', serif;
+            letter-spacing: 0.5px;
+        }
+
+        .reading-author {
+            color: #3e2723;
+            font-size: 14px;
+            font-style: italic;
+            text-align: center;
+            margin-bottom: 25px;
+            opacity: 0.9;
+            font-family: 'Georgia', serif;
+        }
+
+        .reading-quote {
+            color: #1a0f0a;
+            font-size: 15px;
+            line-height: 1.8;
+            text-align: justify;
+            font-family: 'Georgia', serif;
+            text-indent: 25px;
+            letter-spacing: 0.3px;
+            max-width: 100%;
+            word-wrap: break-word;
+        }
+
+        .reading-controls {
+            margin-top: 20px;
+            flex-shrink: 0;
+        }
+
+        .reading-controls .bookshelf-hint {
+            color: #3e2723;
+            opacity: 0.7;
+            font-size: 9px;
+        }
+
+        /* ===== DREAM MODAL STYLES ===== */
+        .dream-overlay {
+            position: fixed;
+            inset: 0;
+            background: black;
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            animation: dreamFadeIn 1s ease-out;
+        }
+
+        @keyframes dreamFadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .dream-container {
+            position: relative;
+            width: 800px;
+            height: 600px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            animation: dreamContainerFadeIn 1.5s ease-out 0.3s backwards;
+        }
+
+        @keyframes dreamContainerFadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .cloud-frame {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        .cloud-video {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            height: auto;
+            max-height: 70%;
+            object-fit: contain;
+            z-index: 10;
+            border-radius: 8px;
+        }
+
+        .dream-hint {
+            position: absolute;
+            bottom: 80px;
+            color: #ffd700;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 16px;
+            text-align: center;
+            text-shadow:
+                2px 2px 0 #000000,
+                4px 4px 8px rgba(0, 0, 0, 0.8);
+            animation: dreamHintFadeIn 1s ease-out 1s backwards, pulse 2s ease-in-out 2s infinite;
+            letter-spacing: 2px;
+        }
+
+        @keyframes dreamHintFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.7;
+                transform: scale(1.05);
+            }
+        }
+
+        /* ===== PHOTOBOARD STYLES ===== */
+        .photoboard-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 10000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .cork-board {
+            position: relative;
+            width: 90vw;
+            height: 75vh;
+            max-width: 1400px;
+            max-height: 800px;
+            background-image: url('/assets/ui/cork_bg.png');
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+            overflow: hidden;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .cork-board.loaded {
+            opacity: 1;
+        }
+
+        .polaroid-photo {
+            position: absolute;
+            background: #f5f5f5;
+            padding: 3px 3px 14px 3px;
+            border-radius: 2px;
+            box-shadow:
+                0 4px 12px rgba(0, 0, 0, 0.3),
+                0 8px 24px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease, z-index 0s;
+            cursor: pointer;
+            width: 62px;
+            opacity: 0;
+            transition: opacity 0.3s ease 0.1s, transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .cork-board.loaded .polaroid-photo {
+            opacity: 1;
+        }
+
+        .polaroid-photo.focused {
+            box-shadow:
+                0 0 0 4px #ffd700,
+                0 0 20px rgba(255, 215, 0, 0.8),
+                0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .polaroid-pin {
+            position: absolute;
+            top: -3px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            box-shadow:
+                0 2px 4px rgba(0, 0, 0, 0.3),
+                inset 0 1px 2px rgba(255, 255, 255, 0.5);
+            z-index: 10;
+        }
+
+        .polaroid-star {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            font-size: 12px;
+            z-index: 15;
+            filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.5));
+            animation: starPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes starPulse {
+            0%, 100% {
+                transform: scale(1);
+                filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.5));
+            }
+            50% {
+                transform: scale(1.15);
+                filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.8));
+            }
+        }
+
+        .polaroid-image {
+            width: 100%;
+            height: 62px;
+            object-fit: cover;
+            border-radius: 1px;
+            display: block;
+        }
+
+        .polaroid-caption {
+            position: absolute;
+            bottom: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Permanent Marker', 'Comic Sans MS', cursive;
+            font-size: 8px;
+            color: #333;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        /* ===== EDIT MODE STYLES ===== */
+        .cork-board.edit-mode {
+            cursor: crosshair;
+        }
+
+        .cork-board.edit-mode .polaroid-photo {
+            cursor: grab;
+            transition: transform 0.1s ease, box-shadow 0.2s ease;
+        }
+
+        .cork-board.edit-mode .polaroid-photo:hover {
+            transform: scale(1.05) !important;
+            box-shadow:
+                0 0 0 3px #00ff00,
+                0 0 15px rgba(0, 255, 0, 0.6),
+                0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .cork-board.edit-mode .polaroid-photo.dragging {
+            cursor: grabbing;
+            transform: scale(1.15) !important;
+            z-index: 1000 !important;
+            box-shadow:
+                0 0 0 4px #00ff00,
+                0 0 25px rgba(0, 255, 0, 0.8),
+                0 12px 48px rgba(0, 0, 0, 0.6);
+            transition: none;
+        }
+
+        .photoboard-controls {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10001;
+        }
+
+        .photoboard-hint {
+            color: #ffd700;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 12px;
+            text-align: center;
+            text-shadow:
+                2px 2px 0 #000000,
+                4px 4px 8px rgba(0, 0, 0, 0.8);
+            letter-spacing: 1px;
+        }
+
+        /* ===== PHOTO ZOOM MODE STYLES ===== */
+        .photo-zoom-view {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .photo-zoom-container {
+            max-width: 90vw;
+            max-height: 80vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .photo-zoom-image {
+            max-width: 100%;
+            max-height: 80vh;
+            object-fit: contain;
+            border: 8px solid #f5f5f5;
+            border-radius: 4px;
+            box-shadow:
+                0 0 40px rgba(255, 255, 255, 0.3),
+                0 20px 60px rgba(0, 0, 0, 0.9);
+            animation: zoomIn 0.4s ease;
+        }
+
+        @keyframes zoomIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .photo-zoom-controls {
+            position: fixed;
+            bottom: 30px;
+        }
+
+        /* ===== MECHANICAL DOOR KEYPAD STYLES ===== */
+        .door-keypad-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .keypad-panel.mechanical {
+            background: linear-gradient(135deg, #3e2723 0%, #1a0f0a 100%);
+            border: 12px solid #5d4037;
+            border-radius: 20px;
+            box-shadow:
+                0 0 0 4px #8d6e63,
+                0 20px 60px rgba(0, 0, 0, 0.9),
+                inset 0 4px 12px rgba(0, 0, 0, 0.6);
+            padding: 40px;
+            width: 550px;
+            font-family: 'Press Start 2P', monospace;
+        }
+
+        .keypad-panel.shake {
+            animation: shake 0.5s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+            20%, 40%, 60%, 80% { transform: translateX(10px); }
+        }
+
+        .keypad-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .keypad-title {
+            color: #d7ccc8;
+            font-size: 18px;
+            letter-spacing: 3px;
+            text-shadow:
+                2px 2px 0 #000000,
+                4px 4px 8px rgba(0, 0, 0, 0.8);
+        }
+
+        .keypad-hints {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 12px;
+            border: 2px solid rgba(141, 110, 99, 0.3);
+        }
+
+        .keypad-hint-item {
+            font-size: 32px;
+            filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.7));
+        }
+
+        /* Текстовая подсказка (альтернатива иконкам) */
+        .keypad-hint-text {
+            margin-bottom: 30px;
+            padding: 25px 30px;
+            background: linear-gradient(135deg, rgba(0, 150, 200, 0.15) 0%, rgba(0, 100, 150, 0.1) 100%);
+            border-radius: 12px;
+            border: 2px solid rgba(100, 200, 255, 0.3);
+            box-shadow:
+                0 0 20px rgba(100, 200, 255, 0.2),
+                inset 0 0 30px rgba(100, 200, 255, 0.05);
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            line-height: 1.6;
+            color: #b3e5fc;
+            text-align: center;
+            font-style: italic;
+            letter-spacing: 0.5px;
+            text-shadow:
+                0 0 10px rgba(179, 229, 252, 0.5),
+                0 2px 4px rgba(0, 0, 0, 0.8);
+            animation: hintGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes hintGlow {
+            0%, 100% {
+                box-shadow:
+                    0 0 20px rgba(100, 200, 255, 0.2),
+                    inset 0 0 30px rgba(100, 200, 255, 0.05);
+                border-color: rgba(100, 200, 255, 0.3);
+            }
+            50% {
+                box-shadow:
+                    0 0 30px rgba(100, 200, 255, 0.4),
+                    inset 0 0 40px rgba(100, 200, 255, 0.1);
+                border-color: rgba(100, 200, 255, 0.5);
+            }
+        }
+
+        /* Механический замок с барабанами */
+        .mechanical-lock {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            padding: 30px 20px;
+            background: linear-gradient(135deg, #4e342e 0%, #3e2723 100%);
+            border-radius: 12px;
+            border: 4px solid #6d4c41;
+            box-shadow:
+                inset 0 4px 12px rgba(0, 0, 0, 0.8),
+                0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        .drum-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .drum-window {
+            width: 80px;
+            height: 100px;
+            background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+            border: 5px solid #795548;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow:
+                inset 0 4px 8px rgba(0, 0, 0, 0.9),
+                0 0 20px rgba(121, 85, 72, 0.3);
+            position: relative;
+        }
+
+        .drum-container.selected .drum-window {
+            border-color: #ffab40;
+            box-shadow:
+                inset 0 4px 8px rgba(0, 0, 0, 0.9),
+                0 0 30px rgba(255, 171, 64, 0.6),
+                0 0 10px rgba(255, 171, 64, 0.4);
+        }
+
+        .drum-roller {
+            position: absolute;
+            width: 100%;
+            height: 300px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .drum-digit {
+            width: 100%;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: #4a4a4a;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        .drum-digit.current {
+            color: #ffab40;
+            text-shadow:
+                0 0 10px rgba(255, 171, 64, 0.8),
+                0 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        .drum-digit.prev {
+            opacity: 0.3;
+        }
+
+        .drum-digit.next {
+            opacity: 0.3;
+        }
+
+        .drum-selector {
+            color: #ffab40;
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow:
+                0 0 10px rgba(255, 171, 64, 0.8),
+                2px 2px 4px rgba(0, 0, 0, 0.8);
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.6;
+                transform: scale(1.1);
+            }
+        }
+
+        .keypad-message {
+            text-align: center;
+            font-size: 14px;
+            min-height: 25px;
+            margin-bottom: 20px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            font-weight: bold;
+        }
+
+        .mechanical-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .control-row {
+            display: flex;
+            justify-content: center;
+        }
+
+        .control-hint {
+            color: #bcaaa4;
+            font-size: 11px;
+            text-align: center;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+        }
+
+        .keypad-control-btn {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 13px;
+            padding: 15px 35px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow:
+                0 4px 8px rgba(0, 0, 0, 0.5),
+                inset 0 2px 4px rgba(255, 255, 255, 0.1);
+        }
+
+        .enter-btn {
+            background: linear-gradient(135deg, #ff6f00 0%, #e65100 100%);
+            border: 4px solid #ff8f00;
+            color: #fff;
+        }
+
+        .enter-btn:hover {
+            background: linear-gradient(135deg, #ff8f00 0%, #ff6f00 100%);
+            transform: scale(1.05);
+            box-shadow:
+                0 6px 12px rgba(255, 111, 0, 0.6),
+                inset 0 2px 4px rgba(255, 255, 255, 0.2);
+        }
+
+        .enter-btn:active {
+            transform: scale(0.95);
+        }
+
+        .keypad-exit-hint {
+            text-align: center;
+            color: #8d6e63;
+            font-size: 10px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container"></div>
+    <script type="module" src="/src/main.js"></script>
+</body>
+</html>
