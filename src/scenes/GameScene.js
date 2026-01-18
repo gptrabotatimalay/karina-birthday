@@ -5,6 +5,7 @@ import ConsoleOverlay from '../components/ConsoleOverlay';
 import musicManager from '../managers/MusicManager';
 import DreamModal from '../components/DreamModal';
 import DoorKeypad from '../components/DoorKeypad';
+import ChatPanel from '../components/ChatPanel';
 
 export default class GameScene extends Phaser.Scene {
     constructor() {
@@ -40,6 +41,17 @@ export default class GameScene extends Phaser.Scene {
         // ===== КОДОВЫЙ ЗАМОК КОРИДОРА =====
         this.hallwayKeypad = null; // Ссылка на кодовый замок коридора
         this.isHallwayUnlocked = false; // Флаг разблокировки коридора
+
+        // ===== CHAT PANEL =====
+        this.chatPanel = null; // Ссылка на ChatPanel
+        this.isChatActive = false; // Флаг активности чата
+
+        // ===== СИСТЕМА МАСОК (INVERTED GEOMETRY MASK) =====
+        this.maskGraphics = null; // Графический объект для рисования масок
+        this.builderMode = 2; // Режим строителя: 1 = Стены (Красные), 2 = Зоны (Желтые), 3 = Маски (Синие)
+        this.debugMasks = []; // Массив для хранения отладочных прямоугольников масок
+        this.showDebugMasks = false; // Флаг показа отладочных масок
+        this.debugMode = false; // Режим разработки (false = продакшн, синие квадраты не создаются вообще)
     }
 
     create(data) {
@@ -76,8 +88,16 @@ export default class GameScene extends Phaser.Scene {
             BG_HEIGHT
         );
 
-        // ===== ДИАЛОГОВОЕ ОКНО =====
-        this.createDialogWindow(BG_WIDTH, BG_HEIGHT);
+        // ===== CHAT PANEL (Панель справа) =====
+        // Создаем глобальную панель чата, если её еще нет
+        if (!window.chatPanel) {
+            window.chatPanel = new ChatPanel();
+        }
+        this.chatPanel = window.chatPanel;
+        // Уровень чата зависит от прогресса игрока, а не от комнаты
+        // Даша всегда даёт подсказки для текущего этапа квеста
+        this.updateChatLevel();
+        this.chatPanel.setActive(false);
 
         // Установка границ мира под размер фона
         // this.physics.world.setBounds(0, 0, BG_WIDTH, BG_HEIGHT); // Временно отключено
@@ -120,6 +140,27 @@ export default class GameScene extends Phaser.Scene {
             this.player.play('karina-idle-down');
             this.player.lastDirection = 'down';
         }
+
+        // ===== СИСТЕМА ИНВЕРТИРОВАННЫХ МАСОК =====
+
+        // 1. ЛОГИКА: Создаем графический объект для математики маски (невидимый)
+        this.maskGraphics = this.add.graphics();
+        this.maskGraphics.visible = false; // Этот слой НЕВИДИМ - только для маски
+
+        // 2. ВИЗУАЛ: Создаем графический объект для отладочной визуализации
+        this.debugGraphics = this.add.graphics();
+        this.debugGraphics.setDepth(101); // Поверх всего для видимости
+
+        // Создаем геометрическую маску из невидимого maskGraphics
+        const mask = this.maskGraphics.createGeometryMask();
+
+        // ВАЖНО: Инвертируем маску (персонаж виден везде, КРОМЕ нарисованных зон)
+        mask.setInvertAlpha(true);
+
+        // Применяем маску к игроку
+        this.player.setMask(mask);
+
+        console.log('[Mask System] Inverted geometry mask applied to player (visual layer separate)');
 
         // Даша (NPC) - сидит на фиолетовом пуфике
         this.dasha = new NPC(this, 986 + this.OFFSET_X, 365 + this.OFFSET_Y, 'dasha', 'Даша', 'Привет! Я сижу на пуфике.');
@@ -177,7 +218,7 @@ export default class GameScene extends Phaser.Scene {
         // ===== ИНТЕРАКТИВНЫЕ ЗОНЫ =====
         this.addZone(615, 348, 26, 77, 'bed'); // Кровать
         this.addZone(800, 479, 39, 11, 'cat'); // Кошка
-        this.addZone(936, 389, 10, 19, 'dasha'); // Даша
+        this.addZone(930, 385, 50, 60, 'dasha'); // Даша (расширенная зона)
         this.addZone(1028, 361, 109, 8, 'bookshelf'); // Шкаф с книгами
         this.addZone(1076, 508, 11, 12, 'vinyl_storage'); // Коробка с пластинками (оригинальная позиция)
         this.addZone(1119, 511, 9, 9, 'record_player'); // Проигрыватель
@@ -185,6 +226,9 @@ export default class GameScene extends Phaser.Scene {
         this.addZone(773, 367, 18, 10, 'photoboard'); // Доска с фотками
         this.addZone(1154, 407, 11, 45, 'corridor'); // Проход в коридор
         this.addZone(650, 568, 95, 11, 'kitchen'); // Проход на кухню
+
+        // ===== МАСКИ ГЛУБИНЫ =====
+        this.addMask(760, 456, 56, 27); // Зона глубины
 
         // ===== ИНСТРУМЕНТЫ ДЛЯ ОТЛАДКИ =====
         this.setupDebugTools(); // Включены для рисования зон
@@ -198,7 +242,15 @@ export default class GameScene extends Phaser.Scene {
         this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
 
         console.log('[GameScene] Scene ready!');
-        console.log('[DEBUG MODE] Click and drag to draw walls. Code will appear in console.');
+        if (this.debugMode) {
+            console.log('[DEBUG MODE] Builder Tool Activated!');
+            console.log('[DEBUG MODE] Press 1: WALLS Mode (Red) - Draw collision walls');
+            console.log('[DEBUG MODE] Press 2: ZONES Mode (Yellow) - Draw interactive zones');
+            console.log('[DEBUG MODE] Press 3: MASKS Mode (Blue) - Draw depth masks');
+            console.log('[DEBUG MODE] Press M: Toggle visibility of debug masks (blue rectangles)');
+            console.log('[DEBUG MODE] Click and drag to draw. Code will appear in console.');
+            console.log('[DEBUG MODE] To disable debug mode: Set this.debugMode = false in constructor');
+        }
     }
 
     createPixelArtFrame(centerX, centerY, width, height) {
@@ -286,162 +338,6 @@ export default class GameScene extends Phaser.Scene {
         graphics.fillRect(x + size - pixelSize * 2, y + size - pixelSize * 2, pixelSize, pixelSize);
     }
 
-    createDialogWindow(bgWidth, bgHeight) {
-        // Размеры и позиция диалогового окна
-        const dialogWidth = 300;
-        const dialogHeight = 500;
-        const dialogX = this.background.x + bgWidth / 2 + 250; // Справа от фона
-        const dialogY = this.background.y;
-
-        // Фон диалогового окна
-        const dialogBg = this.add.graphics();
-        dialogBg.setScrollFactor(0); // Фиксируем на экране
-        dialogBg.setDepth(100);
-
-        // Темный фон с градиентом (имитация)
-        dialogBg.fillStyle(0x2c1810, 1);
-        dialogBg.fillRect(dialogX - dialogWidth / 2, dialogY - dialogHeight / 2, dialogWidth, dialogHeight);
-
-        // Внутренний светлый фон для области чата
-        dialogBg.fillStyle(0x3d2817, 1);
-        dialogBg.fillRect(dialogX - dialogWidth / 2 + 10, dialogY - dialogHeight / 2 + 10, dialogWidth - 20, dialogHeight - 80);
-
-        // Рамка диалогового окна
-        dialogBg.lineStyle(4, 0xdaa520, 1);
-        dialogBg.strokeRect(dialogX - dialogWidth / 2, dialogY - dialogHeight / 2, dialogWidth, dialogHeight);
-
-        // Внутренняя рамка для чата
-        dialogBg.lineStyle(2, 0x8b4513, 1);
-        dialogBg.strokeRect(dialogX - dialogWidth / 2 + 10, dialogY - dialogHeight / 2 + 10, dialogWidth - 20, dialogHeight - 80);
-
-        // Декоративная линия над полем ввода
-        dialogBg.lineStyle(3, 0xdaa520, 1);
-        dialogBg.strokeRect(dialogX - dialogWidth / 2 + 10, dialogY + dialogHeight / 2 - 60, dialogWidth - 20, 40);
-
-        // Область для сообщений (история чата)
-        this.chatMessages = [];
-        this.chatY = dialogY - dialogHeight / 2 + 20; // Начальная позиция для сообщений
-        this.chatAreaHeight = dialogHeight - 100; // Высота области чата
-        this.chatAreaX = dialogX;
-        this.chatAreaLeft = dialogX - dialogWidth / 2 + 20; // Левая граница для текста
-
-        // Поле ввода (визуальное)
-        this.inputFieldText = this.add.text(dialogX - dialogWidth / 2 + 20, dialogY + dialogHeight / 2 - 50, '', {
-            fontSize: '14px',
-            fontFamily: 'Arial',
-            color: '#ffffff',
-            wordWrap: { width: 240, useAdvancedWrap: true }
-        });
-        this.inputFieldText.setScrollFactor(0);
-        this.inputFieldText.setDepth(101);
-
-        // Состояние ввода
-        this.isTyping = false;
-        this.currentInput = '';
-
-        // Клавиши для диалога
-        this.enterKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
-        this.backspaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.BACKSPACE);
-        this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-
-        // Добавляем приветственное сообщение от Даши
-        this.addChatMessage('Даша', 'Привет! Как дела?', '#ff69b4');
-
-        console.log('[Dialog] Dialog window created');
-    }
-
-    addChatMessage(sender, message, color) {
-        // Вычисляем текущую Y позицию с учетом высоты предыдущих сообщений
-        let currentY = this.chatY;
-        this.chatMessages.forEach(msg => {
-            currentY += msg.height + 3; // 3px отступ между сообщениями
-        });
-
-        const messageText = this.add.text(
-            this.chatAreaLeft,
-            currentY,
-            `${sender}: ${message}`,
-            {
-                fontSize: '15px',
-                fontFamily: 'Arial',
-                color: color,
-                wordWrap: { width: 240, useAdvancedWrap: true },
-                lineSpacing: 1,
-                stroke: '#000000',
-                strokeThickness: 2
-            }
-        );
-        messageText.setScrollFactor(0);
-        messageText.setDepth(101);
-
-        this.chatMessages.push(messageText);
-
-        // Автоскролл - удаляем старые сообщения если они выходят за пределы области
-        const maxY = this.chatY + this.chatAreaHeight - 30; // 30px запас для поля ввода
-        while (this.chatMessages.length > 0 && currentY + messageText.height > maxY) {
-            const oldMessage = this.chatMessages.shift();
-            oldMessage.destroy();
-
-            // Пересчитываем позиции всех сообщений
-            let newY = this.chatY;
-            this.chatMessages.forEach(msg => {
-                msg.setY(newY);
-                newY += msg.height + 3;
-            });
-
-            currentY = newY;
-        }
-    }
-
-    handleDialogInput() {
-        // Обработка клавиши Enter для начала/завершения ввода
-        if (Phaser.Input.Keyboard.JustDown(this.enterKey)) {
-            if (!this.isTyping) {
-                // Начинаем ввод
-                this.isTyping = true;
-                this.currentInput = '';
-                this.inputFieldText.setText('');
-            } else {
-                // Отправляем сообщение
-                if (this.currentInput.trim().length > 0) {
-                    this.addChatMessage('Карина', this.currentInput, '#00ffff');
-
-                    // Симулируем ответ от Даши через 1 секунду
-                    this.time.delayedCall(1000, () => {
-                        const responses = [
-                            'Интересно! Расскажи подробнее.',
-                            'Ого, я не знала об этом!',
-                            'Да, я с тобой согласна.',
-                            'Хмм, надо подумать...',
-                            'Это круто! А что еще?'
-                        ];
-                        const randomResponse = responses[Phaser.Math.Between(0, responses.length - 1)];
-                        this.addChatMessage('Даша', randomResponse, '#ff69b4');
-                    });
-
-                    this.currentInput = '';
-                    this.inputFieldText.setText('');
-                }
-                this.isTyping = false;
-            }
-        }
-
-        // Обработка ввода текста
-        if (this.isTyping) {
-            // Обработка Backspace
-            if (Phaser.Input.Keyboard.JustDown(this.backspaceKey)) {
-                this.currentInput = this.currentInput.slice(0, -1);
-                this.inputFieldText.setText(this.currentInput);
-            }
-
-            // Обработка Space
-            if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
-                this.currentInput += ' ';
-                this.inputFieldText.setText(this.currentInput);
-            }
-        }
-    }
-
     setupControls() {
         // WASD управление
         this.keys = {
@@ -460,112 +356,206 @@ export default class GameScene extends Phaser.Scene {
                 this.handleInteraction(this.currentZone);
             }
         });
-
-        // Обработка ввода текста через событие клавиатуры
-        this.input.keyboard.on('keydown', (event) => {
-            if (this.isTyping && event.key.length === 1) {
-                // Ограничиваем длину ввода (примерно 200 символов)
-                if (this.currentInput.length < 200) {
-                    // Добавляем только печатные символы
-                    this.currentInput += event.key;
-                    this.inputFieldText.setText(this.currentInput);
-                }
-            }
-        });
     }
 
     setupDebugTools() {
-        // Текст координат в левом верхнем углу
-        this.coordsText = this.add.text(10, 10, 'Mouse: 0, 0 | Mode: ZONES (Yellow)', {
-            fontSize: '16px',
-            color: '#ffff00',
-            backgroundColor: '#000000',
-            padding: { x: 5, y: 5 }
-        });
-        this.coordsText.setScrollFactor(0); // Фиксируем на экране
-        this.coordsText.setDepth(1000);
+        // Текст координат показывается ТОЛЬКО в режиме разработки
+        if (this.debugMode) {
+            this.coordsText = this.add.text(10, 10, this.getModeText(0, 0), {
+                fontSize: '16px',
+                color: this.getModeColor(),
+                backgroundColor: '#000000',
+                padding: { x: 5, y: 5 }
+            });
+            this.coordsText.setScrollFactor(0); // Фиксируем на экране
+            this.coordsText.setDepth(1000);
+        }
 
         // Переменные для рисования
         this.drawStart = null;
         this.drawRect = null;
 
-        // Обработчики мыши
-        this.input.on('pointerdown', (pointer) => {
-            const worldX = pointer.worldX;
-            const worldY = pointer.worldY;
-            this.drawStart = { x: worldX, y: worldY };
-
-            // Создаем визуальный прямоугольник (ЖЕЛТЫЙ для зон)
-            if (this.drawRect) {
-                this.drawRect.destroy();
-            }
-            this.drawRect = this.add.rectangle(worldX, worldY, 1, 1, 0xffff00, 0.3);
+        // ===== КЛАВИШИ ПЕРЕКЛЮЧЕНИЯ РЕЖИМОВ =====
+        this.input.keyboard.on('keydown-ONE', () => {
+            this.builderMode = 1; // Стены (Красные)
+            console.log('[Builder] Mode: WALLS (Red)');
         });
 
-        this.input.on('pointermove', (pointer) => {
-            const worldX = Math.round(pointer.worldX);
-            const worldY = Math.round(pointer.worldY);
-            this.coordsText.setText(`Mouse: ${worldX}, ${worldY} | Mode: ZONES (Yellow)`);
+        this.input.keyboard.on('keydown-TWO', () => {
+            this.builderMode = 2; // Зоны (Желтые)
+            console.log('[Builder] Mode: ZONES (Yellow)');
+        });
 
-            // Обновляем прямоугольник при рисовании
-            if (this.drawStart && this.drawRect) {
-                const width = worldX - this.drawStart.x;
-                const height = worldY - this.drawStart.y;
-                this.drawRect.setSize(Math.abs(width), Math.abs(height));
-                this.drawRect.setPosition(
-                    this.drawStart.x + width / 2,
-                    this.drawStart.y + height / 2
-                );
+        this.input.keyboard.on('keydown-THREE', () => {
+            this.builderMode = 3; // Маски (Синие)
+            console.log('[Builder] Mode: MASKS (Blue)');
+        });
+
+        // ===== КЛАВИША ПОКАЗА/СКРЫТИЯ ОТЛАДОЧНЫХ МАСОК =====
+        this.input.keyboard.on('keydown-M', () => {
+            // Работает только в режиме разработки
+            if (this.debugMode) {
+                this.showDebugMasks = !this.showDebugMasks;
+                console.log(`[Debug Masks] ${this.showDebugMasks ? 'ПОКАЗАНЫ' : 'СКРЫТЫ'}`);
+
+                // Переключаем видимость всех отладочных масок
+                this.debugMasks.forEach(mask => {
+                    mask.visible = this.showDebugMasks;
+                });
             }
         });
 
-        this.input.on('pointerup', (pointer) => {
-            if (this.drawStart) {
+        // Обработчики мыши работают ТОЛЬКО в режиме разработки
+        if (this.debugMode) {
+            this.input.on('pointerdown', (pointer) => {
                 const worldX = pointer.worldX;
                 const worldY = pointer.worldY;
+                this.drawStart = { x: worldX, y: worldY };
 
-                const x = Math.min(this.drawStart.x, worldX);
-                const y = Math.min(this.drawStart.y, worldY);
-                const width = Math.abs(worldX - this.drawStart.x);
-                const height = Math.abs(worldY - this.drawStart.y);
-
-                if (width > 5 && height > 5) {
-                    // Выводим код для интерактивной зоны в консоль
-                    console.log(`this.addZone(${Math.round(x)}, ${Math.round(y)}, ${Math.round(width)}, ${Math.round(height)}, 'name');`);
-
-                    // Создаем зону (желтую, видимую)
-                    this.addZone(x, y, width, height, 'name');
+                // Создаем визуальный прямоугольник (цвет зависит от режима)
+                if (this.drawRect) {
+                    this.drawRect.destroy();
                 }
+                const color = this.getModeColorHex();
+                this.drawRect = this.add.rectangle(worldX, worldY, 1, 1, color, 0.3);
+            });
 
-                this.drawStart = null;
-            }
-        });
+            this.input.on('pointermove', (pointer) => {
+                const worldX = Math.round(pointer.worldX);
+                const worldY = Math.round(pointer.worldY);
+                this.coordsText.setText(this.getModeText(worldX, worldY));
+                this.coordsText.setColor(this.getModeColor());
+
+                // Обновляем прямоугольник при рисовании
+                if (this.drawStart && this.drawRect) {
+                    const width = worldX - this.drawStart.x;
+                    const height = worldY - this.drawStart.y;
+                    this.drawRect.setSize(Math.abs(width), Math.abs(height));
+                    this.drawRect.setPosition(
+                        this.drawStart.x + width / 2,
+                        this.drawStart.y + height / 2
+                    );
+                }
+            });
+
+            this.input.on('pointerup', (pointer) => {
+                if (this.drawStart) {
+                    const worldX = pointer.worldX;
+                    const worldY = pointer.worldY;
+
+                    const x = Math.min(this.drawStart.x, worldX);
+                    const y = Math.min(this.drawStart.y, worldY);
+                    const width = Math.abs(worldX - this.drawStart.x);
+                    const height = Math.abs(worldY - this.drawStart.y);
+
+                    if (width > 5 && height > 5) {
+                        // Вызываем соответствующую функцию в зависимости от режима
+                        if (this.builderMode === 1) {
+                            // Режим стен (Красные)
+                            console.log(`this.addWall(${Math.round(x)}, ${Math.round(y)}, ${Math.round(width)}, ${Math.round(height)});`);
+                            this.addWall(x, y, width, height);
+                        } else if (this.builderMode === 2) {
+                            // Режим зон (Желтые)
+                            console.log(`this.addZone(${Math.round(x)}, ${Math.round(y)}, ${Math.round(width)}, ${Math.round(height)}, 'name');`);
+                            this.addZone(x, y, width, height, 'name');
+                        } else if (this.builderMode === 3) {
+                            // Режим масок (Синие)
+                            console.log(`this.addMask(${Math.round(x)}, ${Math.round(y)}, ${Math.round(width)}, ${Math.round(height)});`);
+                            this.addMask(x, y, width, height);
+                        }
+                    }
+
+                    this.drawStart = null;
+                }
+            });
+        }
+    }
+
+    // Вспомогательные функции для режимов строителя
+    getModeText(x, y) {
+        const modes = {
+            1: `Mouse: ${x}, ${y} | Mode: WALLS (Red)`,
+            2: `Mouse: ${x}, ${y} | Mode: ZONES (Yellow)`,
+            3: `Mouse: ${x}, ${y} | Mode: MASKS (Blue)`
+        };
+        return modes[this.builderMode] || modes[2];
+    }
+
+    getModeColor() {
+        const colors = {
+            1: '#ff0000', // Красный
+            2: '#ffff00', // Желтый
+            3: '#0000ff'  // Синий
+        };
+        return colors[this.builderMode] || colors[2];
+    }
+
+    getModeColorHex() {
+        const colors = {
+            1: 0xff0000, // Красный
+            2: 0xffff00, // Желтый
+            3: 0x0000ff  // Синий
+        };
+        return colors[this.builderMode] || colors[2];
     }
 
     addWall(x, y, width, height) {
-        // Создаем невидимый физический объект (с учетом смещения)
+        // Создаем физический объект (с учетом смещения)
         const wall = this.add.rectangle(x + width / 2 + this.OFFSET_X, y + height / 2 + this.OFFSET_Y, width, height);
         this.physics.add.existing(wall, true); // true = static body
         this.walls.add(wall);
 
-        // Стены полностью невидимы
+        // Стены всегда невидимы
         wall.setFillStyle(0x00ff00, 0);
     }
 
     addZone(x, y, width, height, name) {
-        // Создаем желтый прямоугольник для интерактивной зоны (с учетом смещения)
+        // Создаем прямоугольник для интерактивной зоны (с учетом смещения)
         const zone = this.add.rectangle(x + width / 2 + this.OFFSET_X, y + height / 2 + this.OFFSET_Y, width, height);
         this.physics.add.existing(zone, true); // true = static body
         this.interactionZones.add(zone);
 
-        // Желтый цвет с прозрачностью (в режиме отладки видимый)
-        zone.setFillStyle(0xffff00, 0.3);
-        zone.setStrokeStyle(2, 0xffff00, 1);
+        // Визуализация зависит от режима разработки
+        if (this.debugMode) {
+            // Желтый цвет с прозрачностью (в режиме отладки видимый)
+            zone.setFillStyle(0xffff00, 0.3);
+            zone.setStrokeStyle(2, 0xffff00, 1);
+        } else {
+            // В продакшене - полностью невидимая
+            zone.setFillStyle(0xffff00, 0);
+        }
 
         // Сохраняем имя зоны
         zone.zoneName = name;
 
         console.log(`[Zone Created] ${name} at (${Math.round(x)}, ${Math.round(y)}) size ${Math.round(width)}x${Math.round(height)}`);
+    }
+
+    addMask(x, y, width, height) {
+        // Рассчитываем финальные координаты с учетом смещения
+        const finalX = x + this.OFFSET_X;
+        const finalY = y + this.OFFSET_Y;
+
+        // ===== 1. ЛОГИКА МАСКИ (НЕВИДИМЫЙ СЛОЙ) =====
+        // Рисуем сплошной БЕЛЫЙ прямоугольник в невидимом maskGraphics
+        // Это нужно для математики маски - где нарисован прямоугольник, игрок исчезает
+        this.maskGraphics.fillStyle(0xffffff, 1);
+        this.maskGraphics.fillRect(finalX, finalY, width, height);
+
+        // ===== 2. ВИЗУАЛИЗАЦИЯ (ОТЛАДКА) =====
+        // Синие прямоугольники рисуются ТОЛЬКО если debugMode = true
+        if (this.debugMode) {
+            // Рисуем ПОЛУПРОЗРАЧНЫЙ СИНИЙ прямоугольник в debugGraphics
+            // Это нужно ДЛЯ МЕНЯ, чтобы я видел, где находятся маски
+            this.debugGraphics.fillStyle(0x0000ff, 0.3); // Синий с alpha 0.3
+            this.debugGraphics.fillRect(finalX, finalY, width, height);
+
+            // Рисуем обводку для лучшей видимости
+            this.debugGraphics.lineStyle(2, 0x0000ff, 1);
+            this.debugGraphics.strokeRect(finalX, finalY, width, height);
+        }
+
+        console.log(`[Mask Created] Logic: invisible white rect | Visual: ${this.debugMode ? 'blue translucent rect' : 'hidden'} at (${Math.round(x)}, ${Math.round(y)}) size ${Math.round(width)}x${Math.round(height)}`);
     }
 
 
@@ -575,10 +565,7 @@ export default class GameScene extends Phaser.Scene {
             return;
         }
 
-        // Обработка диалогового ввода
-        this.handleDialogInput();
-
-        // Обновление игрока
+        // Обновление игрока (всегда разрешаем ходьбу, даже при активном чате)
         this.player.update(this.cursors, this.keys);
 
         // Обновление NPC
@@ -588,16 +575,27 @@ export default class GameScene extends Phaser.Scene {
 
         // ===== ПРОВЕРКА ПЕРЕСЕЧЕНИЯ С ИНТЕРАКТИВНЫМИ ЗОНАМИ =====
         let foundZone = null;
+        let isInDashaZone = false;
 
         this.interactionZones.children.entries.forEach(zone => {
             // Проверяем пересечение игрока с зоной
             if (this.physics.overlap(this.player, zone)) {
                 foundZone = zone.zoneName;
+                // Проверяем, находится ли игрок в зоне Даши
+                if (zone.zoneName === 'dasha') {
+                    isInDashaZone = true;
+                }
             }
         });
 
         // Обновляем текущую зону
         this.currentZone = foundZone;
+
+        // ===== ЛОГИКА ДЕАКТИВАЦИИ ЧАТА =====
+        // Если вышли из зоны Даши - деактивируем чат
+        if (!isInDashaZone && this.isChatActive) {
+            this.deactivateChat();
+        }
 
         // Показываем/скрываем индикатор "!" в зависимости от нахождения в зоне
         if (this.currentZone) {
@@ -609,8 +607,73 @@ export default class GameScene extends Phaser.Scene {
         }
     }
 
+    /**
+     * Обновить уровень чата на основе прогресса игрока
+     * Приоритет: corridor > bathroom > kitchen > bedroom
+     */
+    updateChatLevel() {
+        if (!this.chatPanel) return;
+
+        // Проверяем глобальный прогресс игры
+        const progress = window.gameProgress || {};
+
+        if (progress.corridorUnlocked) {
+            // Если коридор открыт - подсказки про выход на улицу
+            this.chatPanel.setLevel('corridor');
+        } else if (progress.bathroomUnlocked) {
+            // Если ванная открыта - подсказки про ванную (зеркало/пар для кода коридора)
+            this.chatPanel.setLevel('bathroom');
+        } else if (progress.kitchenUnlocked || this.isKitchenUnlocked) {
+            // Если кухня открыта - подсказки про кухню (код от ванной)
+            this.chatPanel.setLevel('kitchen');
+        } else {
+            // Иначе - подсказки про спальню (код от кухни)
+            this.chatPanel.setLevel('bedroom');
+        }
+
+        console.log(`[ChatPanel] Level updated to: ${this.chatPanel.currentLevel}`);
+    }
+
+    /**
+     * Активировать чат с Дашей
+     */
+    activateChat() {
+        console.log('[GameScene] Activating chat with Dasha');
+        this.isChatActive = true;
+
+        // Обновляем уровень перед активацией
+        this.updateChatLevel();
+
+        if (this.chatPanel) {
+            this.chatPanel.setActive(true);
+        }
+        // Показываем индикатор чата над Дашей
+        if (this.dasha) {
+            this.showFloatingText(this.dasha.x, this.dasha.y - 60, '💬 Чат активен!', '#ffd700');
+        }
+    }
+
+    /**
+     * Деактивировать чат
+     */
+    deactivateChat() {
+        console.log('[GameScene] Deactivating chat');
+        this.isChatActive = false;
+        if (this.chatPanel) {
+            this.chatPanel.setActive(false);
+        }
+    }
+
     handleInteraction(zoneName) {
         console.log(`[Interaction] Player pressed E in zone: ${zoneName}`);
+
+        // ===== ОБЩЕНИЕ С ДАШЕЙ =====
+        if (zoneName === 'dasha') {
+            if (!this.isChatActive) {
+                this.activateChat();
+            }
+            return;
+        }
 
         // ===== МЕХАНИКА СНА =====
         if (zoneName === 'bed') {
@@ -1142,6 +1205,10 @@ export default class GameScene extends Phaser.Scene {
         console.log('[Kitchen] Unlocked!');
         this.isKitchenUnlocked = true;
 
+        // Сохраняем прогресс глобально
+        if (!window.gameProgress) window.gameProgress = {};
+        window.gameProgress.kitchenUnlocked = true;
+
         // Закрываем замок
         this.closeDoorKeypad();
 
@@ -1247,6 +1314,10 @@ export default class GameScene extends Phaser.Scene {
     unlockHallway() {
         console.log('[Hallway] Unlocked!');
         this.isHallwayUnlocked = true;
+
+        // Сохраняем прогресс глобально
+        if (!window.gameProgress) window.gameProgress = {};
+        window.gameProgress.corridorUnlocked = true;
 
         // Закрываем замок
         this.closeHallwayKeypad();

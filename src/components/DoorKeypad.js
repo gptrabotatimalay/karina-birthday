@@ -36,6 +36,11 @@ export default class DoorKeypad {
         this.drums = [0, 0, 0, 0];
         this.selectedDrum = 0;
 
+        // Скрываем панель чата
+        if (window.chatPanel) {
+            window.chatPanel.hide();
+        }
+
         // Создаем контейнер
         this.container = document.createElement('div');
         this.container.id = 'door-keypad-overlay';
@@ -401,6 +406,11 @@ export default class DoorKeypad {
                     afterFadeCallback();
                 }
             }, 300); // Соответствует длительности fadeOut анимации
+        }
+
+        // Показываем панель чата
+        if (window.chatPanel) {
+            window.chatPanel.show();
         }
 
         console.log('[DoorKeypad] Closed');

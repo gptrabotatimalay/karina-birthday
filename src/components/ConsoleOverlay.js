@@ -1,3 +1,5 @@
+import FootballMatch from './FootballMatch.jsx';
+
 /**
  * ConsoleOverlay - Интерфейс игровой консоли с мини-играми
  * Стиль: Экран телевизора/портативной консоли с темной рамкой
@@ -13,6 +15,7 @@ export default class ConsoleOverlay {
         this.snakeState = null;
         this.ticTacToeState = null;
         this.pesState = null;
+        this.footballMatch = null;
 
         // Обработчики клавиатуры
         this.keyHandlers = [];
@@ -39,6 +42,11 @@ export default class ConsoleOverlay {
         this.onClose = onCloseCallback;
         this.currentGame = 'menu';
 
+        // Скрываем панель чата
+        if (window.chatPanel) {
+            window.chatPanel.hide();
+        }
+
         this.createContainer();
         this.renderMainMenu();
         this.setupKeyboardListeners();
@@ -60,6 +68,11 @@ export default class ConsoleOverlay {
 
         // Очистка состояний игр
         this.cleanupCurrentGame();
+
+        // Показываем панель чата
+        if (window.chatPanel) {
+            window.chatPanel.show();
+        }
 
         if (this.onClose) {
             this.onClose();
@@ -376,9 +389,15 @@ export default class ConsoleOverlay {
         if (this.snakeState && this.snakeState.interval) {
             clearInterval(this.snakeState.interval);
         }
+        if (this.footballMatch) {
+            // Убираем callback перед destroy, чтобы избежать двойного вызова backToMenu
+            this.footballMatch.setBackCallback(null);
+            this.footballMatch.destroy();
+        }
         this.snakeState = null;
         this.ticTacToeState = null;
         this.pesState = null;
+        this.footballMatch = null;
     }
 
     /**
@@ -388,6 +407,13 @@ export default class ConsoleOverlay {
         this.cleanupCurrentGame();
         this.currentGame = 'menu';
         this.selectedIndex = 0; // Сбрасываем выбор в карусели
+
+        // Восстанавливаем padding для контента
+        const content = document.getElementById('console-content');
+        if (content) {
+            content.style.padding = '20px';
+        }
+
         this.renderMainMenu();
     }
 
@@ -772,106 +798,18 @@ export default class ConsoleOverlay {
     }
 
     /**
-     * ИГРА: PES 2026 (интерактивная сцена)
+     * ИГРА: PES 2026 (2D симулятор матча)
      */
     startPES() {
         const content = document.getElementById('console-content');
         if (!content) return;
 
-        this.pesState = {
-            stage: 0,
-            commentary: [
-                'LOADING MATCH...',
-                'MATCH STARTED!',
-                'DASHA ATTACKS...',
-                'KARINA STEALS BALL!',
-                'SHOT!!!',
-                'GOAL!!!',
-                'KARINA WINS 5:0!' // ПОДСКАЗКА: цифра 5
-            ]
-        };
+        // Очищаем контейнер и создаем новый компонент FootballMatch
+        content.innerHTML = '';
+        content.style.padding = '0';
 
-        content.innerHTML = `
-            <div style="text-align: center; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-                <h2 style="color: #ffffff; margin: 0 0 25px 0; font-size: 20px; letter-spacing: 2px;">PES 2026</h2>
-                <div id="pes-screen" style="
-                    min-height: 350px;
-                    width: 90%;
-                    max-width: 700px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 18px;
-                    color: #ffffff;
-                    padding: 30px;
-                    background: #0a4d0a;
-                    border: 4px solid #ffffff;
-                    border-radius: 0px;
-                    box-shadow: none;
-                    margin-bottom: 20px;
-                    font-family: 'Press Start 2P', cursive;
-                    line-height: 2;
-                ">
-                    <div id="pes-text"></div>
-                </div>
-                <button id="pes-next" style="${this.getButtonStyle()}; margin-bottom: 12px; min-width: 300px; padding: 12px 24px; font-size: 12px;">
-                    NEXT
-                </button>
-                <button id="pes-back" style="${this.getButtonStyle('#ff0000')}; min-width: 300px; padding: 12px 24px; font-size: 12px;">
-                    BACK TO MENU
-                </button>
-            </div>
-        `;
-
-        document.getElementById('pes-next').addEventListener('click', () => this.nextPESStage());
-        document.getElementById('pes-back').addEventListener('click', () => this.backToMenu());
-
-        this.renderPESStage();
-    }
-
-    /**
-     * Следующий этап PES
-     */
-    nextPESStage() {
-        if (!this.pesState) return;
-
-        this.pesState.stage++;
-        if (this.pesState.stage >= this.pesState.commentary.length) {
-            this.pesState.stage = this.pesState.commentary.length - 1;
-        }
-
-        this.renderPESStage();
-    }
-
-    /**
-     * Отрисовка этапа PES
-     */
-    renderPESStage() {
-        const textEl = document.getElementById('pes-text');
-        const nextBtn = document.getElementById('pes-next');
-        if (!textEl || !nextBtn) return;
-
-        const stage = this.pesState.stage;
-        const text = this.pesState.commentary[stage];
-
-        // Анимация появления текста
-        textEl.style.opacity = '0';
-        setTimeout(() => {
-            textEl.textContent = text;
-            textEl.style.transition = 'opacity 0.5s ease';
-            textEl.style.opacity = '1';
-        }, 100);
-
-        // Финальный экран
-        if (stage === this.pesState.commentary.length - 1) {
-            textEl.style.fontSize = '24px';
-            textEl.style.color = '#ffff00';
-            nextBtn.style.display = 'none';
-        } else {
-            textEl.style.fontSize = '18px';
-            textEl.style.color = '#ffffff';
-            nextBtn.style.display = 'inline-flex';
-        }
+        this.footballMatch = new FootballMatch(content);
+        this.footballMatch.setBackCallback(() => this.backToMenu());
     }
 
     /**
@@ -953,6 +891,7 @@ export default class ConsoleOverlay {
                 if (this.currentGame === 'menu') {
                     this.close();
                 } else {
+                    // Для всех игр (включая PES/футбол) - возвращаемся в меню
                     this.backToMenu();
                 }
             }

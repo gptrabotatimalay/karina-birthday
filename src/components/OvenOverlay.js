@@ -21,6 +21,11 @@ export default class OvenOverlay {
         this.isActive = true;
         this.onClose = onCloseCallback;
 
+        // Скрываем панель чата
+        if (window.chatPanel) {
+            window.chatPanel.hide();
+        }
+
         this.createContainer();
         this.setupKeyboardListener();
     }
@@ -44,6 +49,11 @@ export default class OvenOverlay {
             this.container.remove();
             this.container = null;
             this.videoElement = null;
+        }
+
+        // Показываем панель чата
+        if (window.chatPanel) {
+            window.chatPanel.show();
         }
 
         // Вызываем колбэк (возвращаем управление игроку)

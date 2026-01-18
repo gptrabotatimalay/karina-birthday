@@ -29,6 +29,11 @@ export default class BathtubOverlay {
         this.onClose = onCloseCallback;
         this.stage = 'initial';
 
+        // Скрываем панель чата
+        if (window.chatPanel) {
+            window.chatPanel.hide();
+        }
+
         this.createContainer();
         this.setupKeyboardListener();
 
@@ -224,6 +229,11 @@ export default class BathtubOverlay {
         if (this.container) {
             this.container.remove();
             this.container = null;
+        }
+
+        // Показываем панель чата
+        if (window.chatPanel) {
+            window.chatPanel.show();
         }
 
         console.log('[BathtubOverlay] Closed');

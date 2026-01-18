@@ -88,6 +88,19 @@ class MusicManager {
     }
 
     /**
+     * Полная остановка музыки (для финала игры)
+     */
+    stopAllMusic() {
+        if (this.currentAudio) {
+            this.currentAudio.pause();
+            this.currentAudio.currentTime = 0;
+        }
+        this.isPlaying = false;
+        this.sourceRoom = null;
+        console.log('[MusicManager] All music stopped');
+    }
+
+    /**
      * Включить/выключить музыку (toggle)
      */
     toggleMusic(roomName) {

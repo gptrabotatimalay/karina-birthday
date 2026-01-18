@@ -12,6 +12,12 @@ export default class KitchenScene extends Phaser.Scene {
 
         // ===== КОДОВЫЙ ЗАМОК ВАННОЙ =====
         this.isBathroomUnlocked = false; // Флаг разблокировки ванной
+
+        // ===== СИСТЕМА МАСОК (INVERTED GEOMETRY MASK) =====
+        this.maskGraphics = null; // Графический объект для рисования масок (невидимый)
+        this.debugGraphics = null; // Графический объект для визуализации масок (видимый)
+        this.builderMode = 2; // Режим строителя: 1 = Стены (Красные), 2 = Зоны (Желтые), 3 = Маски (Синие)
+        this.debugMode = false; // Режим разработки (false = продакшн, синие квадраты не создаются вообще)
     }
 
     create(data) {
@@ -76,8 +82,14 @@ export default class KitchenScene extends Phaser.Scene {
             BG_HEIGHT
         );
 
-        // ===== ДИАЛОГОВОЕ ОКНО =====
-        this.createDialogWindow(BG_WIDTH, BG_HEIGHT);
+        // ===== CHAT PANEL (Панель справа) =====
+        // Используем глобальную панель чата
+        if (!window.chatPanel) {
+            const ChatPanel = require('../components/ChatPanel').default;
+            window.chatPanel = new ChatPanel();
+        }
+        this.chatPanel = window.chatPanel;
+        this.chatPanel.setLevel('kitchen');
 
         // Установка границ мира под размер фона
         this.physics.world.setBounds(0, 0, BG_WIDTH, BG_HEIGHT);
@@ -113,6 +125,27 @@ export default class KitchenScene extends Phaser.Scene {
         }
 
         console.log(`[KitchenScene] Player spawned at: ${spawnX}, ${spawnY}`);
+
+        // ===== СИСТЕМА ИНВЕРТИРОВАННЫХ МАСОК =====
+
+        // 1. ЛОГИКА: Создаем графический объект для математики маски (невидимый)
+        this.maskGraphics = this.add.graphics();
+        this.maskGraphics.visible = false; // Этот слой НЕВИДИМ - только для маски
+
+        // 2. ВИЗУАЛ: Создаем графический объект для отладочной визуализации
+        this.debugGraphics = this.add.graphics();
+        this.debugGraphics.setDepth(101); // Поверх всего для видимости
+
+        // Создаем геометрическую маску из невидимого maskGraphics
+        const mask = this.maskGraphics.createGeometryMask();
+
+        // ВАЖНО: Инвертируем маску (персонаж виден везде, КРОМЕ нарисованных зон)
+        mask.setInvertAlpha(true);
+
+        // Применяем маску к игроку
+        this.player.setMask(mask);
+
+        console.log('[Mask System] Inverted geometry mask applied to player (visual layer separate)');
 
         // ===== ИНИЦИАЛИЗАЦИЯ СТЕН =====
         this.walls = this.physics.add.staticGroup();
@@ -279,148 +312,6 @@ export default class KitchenScene extends Phaser.Scene {
         graphics.fillRect(x + size - pixelSize * 2, y + size - pixelSize * 2, pixelSize, pixelSize);
     }
 
-    createDialogWindow(bgWidth, bgHeight) {
-        // Размеры и позиция диалогового окна
-        const dialogWidth = 300;
-        const dialogHeight = 500;
-        const dialogX = this.background.x + bgWidth / 2 + 250; // Справа от фона
-        const dialogY = this.background.y;
-
-        // Фон диалогового окна
-        const dialogBg = this.add.graphics();
-        dialogBg.setScrollFactor(0); // Фиксируем на экране
-        dialogBg.setDepth(100);
-
-        // Темный фон с градиентом (имитация)
-        dialogBg.fillStyle(0x2c1810, 1);
-        dialogBg.fillRect(dialogX - dialogWidth / 2, dialogY - dialogHeight / 2, dialogWidth, dialogHeight);
-
-        // Внутренний светлый фон для области чата
-        dialogBg.fillStyle(0x3d2817, 1);
-        dialogBg.fillRect(dialogX - dialogWidth / 2 + 10, dialogY - dialogHeight / 2 + 10, dialogWidth - 20, dialogHeight - 80);
-
-        // Рамка диалогового окна
-        dialogBg.lineStyle(4, 0xdaa520, 1);
-        dialogBg.strokeRect(dialogX - dialogWidth / 2, dialogY - dialogHeight / 2, dialogWidth, dialogHeight);
-
-        // Внутренняя рамка для чата
-        dialogBg.lineStyle(2, 0x8b4513, 1);
-        dialogBg.strokeRect(dialogX - dialogWidth / 2 + 10, dialogY - dialogHeight / 2 + 10, dialogWidth - 20, dialogHeight - 80);
-
-        // Декоративная линия над полем ввода
-        dialogBg.lineStyle(3, 0xdaa520, 1);
-        dialogBg.strokeRect(dialogX - dialogWidth / 2 + 10, dialogY + dialogHeight / 2 - 60, dialogWidth - 20, 40);
-
-        // Область для сообщений (история чата)
-        this.chatMessages = [];
-        this.chatY = dialogY - dialogHeight / 2 + 20; // Начальная позиция для сообщений
-        this.chatAreaHeight = dialogHeight - 100; // Высота области чата
-        this.chatAreaX = dialogX;
-        this.chatAreaLeft = dialogX - dialogWidth / 2 + 20; // Левая граница для текста
-
-        // Поле ввода (визуальное)
-        this.inputFieldText = this.add.text(dialogX - dialogWidth / 2 + 20, dialogY + dialogHeight / 2 - 50, '', {
-            fontSize: '14px',
-            fontFamily: 'Arial',
-            color: '#ffffff',
-            wordWrap: { width: 240, useAdvancedWrap: true }
-        });
-        this.inputFieldText.setScrollFactor(0);
-        this.inputFieldText.setDepth(101);
-
-        // Состояние ввода
-        this.isTyping = false;
-        this.currentInput = '';
-
-        // Клавиши для диалога
-        this.enterKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
-        this.backspaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.BACKSPACE);
-        this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-
-        // Добавляем приветственное сообщение
-        this.addChatMessage('Карина', 'Вот я и на кухне!', '#00ffff');
-
-        console.log('[Dialog] Dialog window created');
-    }
-
-    addChatMessage(sender, message, color) {
-        // Вычисляем текущую Y позицию с учетом высоты предыдущих сообщений
-        let currentY = this.chatY;
-        this.chatMessages.forEach(msg => {
-            currentY += msg.height + 3; // 3px отступ между сообщениями
-        });
-
-        const messageText = this.add.text(
-            this.chatAreaLeft,
-            currentY,
-            `${sender}: ${message}`,
-            {
-                fontSize: '15px',
-                fontFamily: 'Arial',
-                color: color,
-                wordWrap: { width: 240, useAdvancedWrap: true },
-                lineSpacing: 1,
-                stroke: '#000000',
-                strokeThickness: 2
-            }
-        );
-        messageText.setScrollFactor(0);
-        messageText.setDepth(101);
-
-        this.chatMessages.push(messageText);
-
-        // Автоскролл - удаляем старые сообщения если они выходят за пределы области
-        const maxY = this.chatY + this.chatAreaHeight - 30; // 30px запас для поля ввода
-        while (this.chatMessages.length > 0 && currentY + messageText.height > maxY) {
-            const oldMessage = this.chatMessages.shift();
-            oldMessage.destroy();
-
-            // Пересчитываем позиции всех сообщений
-            let newY = this.chatY;
-            this.chatMessages.forEach(msg => {
-                msg.setY(newY);
-                newY += msg.height + 3;
-            });
-
-            currentY = newY;
-        }
-    }
-
-    handleDialogInput() {
-        // Обработка клавиши Enter для начала/завершения ввода
-        if (Phaser.Input.Keyboard.JustDown(this.enterKey)) {
-            if (!this.isTyping) {
-                // Начинаем ввод
-                this.isTyping = true;
-                this.currentInput = '';
-                this.inputFieldText.setText('');
-            } else {
-                // Отправляем сообщение
-                if (this.currentInput.trim().length > 0) {
-                    this.addChatMessage('Карина', this.currentInput, '#00ffff');
-                    this.currentInput = '';
-                    this.inputFieldText.setText('');
-                }
-                this.isTyping = false;
-            }
-        }
-
-        // Обработка ввода текста
-        if (this.isTyping) {
-            // Обработка Backspace
-            if (Phaser.Input.Keyboard.JustDown(this.backspaceKey)) {
-                this.currentInput = this.currentInput.slice(0, -1);
-                this.inputFieldText.setText(this.currentInput);
-            }
-
-            // Обработка Space
-            if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
-                this.currentInput += ' ';
-                this.inputFieldText.setText(this.currentInput);
-            }
-        }
-    }
-
     setupControls() {
         // WASD управление
         this.keys = {
@@ -439,40 +330,33 @@ export default class KitchenScene extends Phaser.Scene {
                 this.handleInteraction(this.currentZone);
             }
         });
-
-        // Обработка ввода текста через событие клавиатуры
-        this.input.keyboard.on('keydown', (event) => {
-            if (this.isTyping && event.key.length === 1) {
-                // Ограничиваем длину ввода (примерно 200 символов)
-                if (this.currentInput.length < 200) {
-                    // Добавляем только печатные символы
-                    this.currentInput += event.key;
-                    this.inputFieldText.setText(this.currentInput);
-                }
-            }
-        });
     }
 
     setupDebugTools() {
-        // Режим рисования: 'walls' или 'zones'
-        this.drawMode = 'zones'; // По умолчанию режим зон
-
         // Текст координат в левом верхнем углу
-        this.coordsText = this.add.text(10, 10, 'Mouse: 0, 0 | Mode: ZONES (Yellow) | Press T to toggle', {
+        this.coordsText = this.add.text(10, 10, this.getModeText(0, 0), {
             fontSize: '16px',
-            color: '#ffff00',
+            color: this.getModeColor(),
             backgroundColor: '#000000',
             padding: { x: 5, y: 5 }
         });
         this.coordsText.setScrollFactor(0); // Фиксируем на экране
         this.coordsText.setDepth(1000);
 
-        // Клавиша T для переключения режима
-        this.toggleKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.T);
-        this.toggleKey.on('down', () => {
-            this.drawMode = this.drawMode === 'zones' ? 'walls' : 'zones';
-            this.updateDebugText();
-            console.log(`[DEBUG] Switched to ${this.drawMode.toUpperCase()} mode`);
+        // Клавиши переключения режимов
+        this.input.keyboard.on('keydown-ONE', () => {
+            this.builderMode = 1; // Стены (Красные)
+            console.log('[Builder] Mode: WALLS (Red)');
+        });
+
+        this.input.keyboard.on('keydown-TWO', () => {
+            this.builderMode = 2; // Зоны (Желтые)
+            console.log('[Builder] Mode: ZONES (Yellow)');
+        });
+
+        this.input.keyboard.on('keydown-THREE', () => {
+            this.builderMode = 3; // Маски (Синие)
+            console.log('[Builder] Mode: MASKS (Blue)');
         });
 
         // Переменные для рисования
@@ -489,14 +373,15 @@ export default class KitchenScene extends Phaser.Scene {
             if (this.drawRect) {
                 this.drawRect.destroy();
             }
-            const color = this.drawMode === 'walls' ? 0xff0000 : 0xffff00;
+            const color = this.getModeColorHex();
             this.drawRect = this.add.rectangle(worldX, worldY, 1, 1, color, 0.3);
         });
 
         this.input.on('pointermove', (pointer) => {
             const worldX = Math.round(pointer.worldX);
             const worldY = Math.round(pointer.worldY);
-            this.updateDebugText(worldX, worldY);
+            this.coordsText.setText(this.getModeText(worldX, worldY));
+            this.coordsText.setColor(this.getModeColor());
 
             // Обновляем прямоугольник при рисовании
             if (this.drawStart && this.drawRect) {
@@ -527,18 +412,18 @@ export default class KitchenScene extends Phaser.Scene {
                     const roundedWidth = Math.round(width);
                     const roundedHeight = Math.round(height);
 
-                    if (this.drawMode === 'walls') {
-                        // Выводим код для стены в консоль
+                    if (this.builderMode === 1) {
+                        // Режим стен (Красные)
                         console.log(`this.addWall(${correctedX}, ${correctedY}, ${roundedWidth}, ${roundedHeight});`);
-
-                        // Создаем стену напрямую (без дополнительного смещения)
                         this.createWallDirect(x, y, width, height);
-                    } else {
-                        // Выводим код для интерактивной зоны в консоль
+                    } else if (this.builderMode === 2) {
+                        // Режим зон (Желтые)
                         console.log(`this.addZone(${correctedX}, ${correctedY}, ${roundedWidth}, ${roundedHeight}, 'name');`);
-
-                        // Создаем зону напрямую (без дополнительного смещения)
                         this.createZoneDirect(x, y, width, height, 'debug_zone');
+                    } else if (this.builderMode === 3) {
+                        // Режим масок (Синие)
+                        console.log(`this.addMask(${correctedX}, ${correctedY}, ${roundedWidth}, ${roundedHeight});`);
+                        this.addMask(correctedX, correctedY, roundedWidth, roundedHeight);
                     }
                 }
 
@@ -547,16 +432,31 @@ export default class KitchenScene extends Phaser.Scene {
         });
     }
 
-    updateDebugText(mouseX, mouseY) {
-        const modeText = this.drawMode === 'walls' ? 'WALLS (Red)' : 'ZONES (Yellow)';
-        const modeColor = this.drawMode === 'walls' ? '#ff0000' : '#ffff00';
+    getModeText(x, y) {
+        const modes = {
+            1: `Mouse: ${x}, ${y} | Mode: WALLS (Red)`,
+            2: `Mouse: ${x}, ${y} | Mode: ZONES (Yellow)`,
+            3: `Mouse: ${x}, ${y} | Mode: MASKS (Blue)`
+        };
+        return modes[this.builderMode] || modes[2];
+    }
 
-        if (mouseX !== undefined && mouseY !== undefined) {
-            this.coordsText.setText(`Mouse: ${mouseX}, ${mouseY} | Mode: ${modeText} | Press T to toggle`);
-        } else {
-            this.coordsText.setText(`Mode: ${modeText} | Press T to toggle`);
-        }
-        this.coordsText.setColor(modeColor);
+    getModeColor() {
+        const colors = {
+            1: '#ff0000', // Красный
+            2: '#ffff00', // Желтый
+            3: '#0000ff'  // Синий
+        };
+        return colors[this.builderMode] || colors[2];
+    }
+
+    getModeColorHex() {
+        const colors = {
+            1: 0xff0000, // Красный
+            2: 0xffff00, // Желтый
+            3: 0x0000ff  // Синий
+        };
+        return colors[this.builderMode] || colors[2];
     }
 
     // Метод для создания стены из кода (с применением смещения)
@@ -591,9 +491,8 @@ export default class KitchenScene extends Phaser.Scene {
         this.physics.add.existing(zone, true); // true = static body
         this.interactionZones.add(zone);
 
-        // Желтый цвет с прозрачностью (в режиме отладки видимый)
-        zone.setFillStyle(0xffff00, 0.3);
-        zone.setStrokeStyle(2, 0xffff00, 1);
+        // Невидимая зона
+        zone.setFillStyle(0xffff00, 0);
 
         // Сохраняем имя зоны
         zone.zoneName = name;
@@ -607,17 +506,40 @@ export default class KitchenScene extends Phaser.Scene {
         this.physics.add.existing(zone, true);
         this.interactionZones.add(zone);
 
-        zone.setFillStyle(0xffff00, 0.3);
-        zone.setStrokeStyle(2, 0xffff00, 1);
+        zone.setFillStyle(0xffff00, 0);
         zone.zoneName = name;
 
         console.log(`[Zone Created Direct] ${name} at world (${Math.round(x)}, ${Math.round(y)}) size ${Math.round(width)}x${Math.round(height)}`);
     }
 
-    update(time, delta) {
-        // Обработка диалогового ввода
-        this.handleDialogInput();
+    addMask(x, y, width, height) {
+        // Рассчитываем финальные координаты с учетом смещения
+        const finalX = x + this.OFFSET_X;
+        const finalY = y + this.OFFSET_Y;
 
+        // ===== 1. ЛОГИКА МАСКИ (НЕВИДИМЫЙ СЛОЙ) =====
+        // Рисуем сплошной БЕЛЫЙ прямоугольник в невидимом maskGraphics
+        // Это нужно для математики маски - где нарисован прямоугольник, игрок исчезает
+        this.maskGraphics.fillStyle(0xffffff, 1);
+        this.maskGraphics.fillRect(finalX, finalY, width, height);
+
+        // ===== 2. ВИЗУАЛИЗАЦИЯ (ОТЛАДКА) =====
+        // Синие прямоугольники рисуются ТОЛЬКО если debugMode = true
+        if (this.debugMode) {
+            // Рисуем ПОЛУПРОЗРАЧНЫЙ СИНИЙ прямоугольник в debugGraphics
+            // Это нужно ДЛЯ МЕНЯ, чтобы я видел, где находятся маски
+            this.debugGraphics.fillStyle(0x0000ff, 0.3); // Синий с alpha 0.3
+            this.debugGraphics.fillRect(finalX, finalY, width, height);
+
+            // Рисуем обводку для лучшей видимости
+            this.debugGraphics.lineStyle(2, 0x0000ff, 1);
+            this.debugGraphics.strokeRect(finalX, finalY, width, height);
+        }
+
+        console.log(`[Mask Created] Logic: invisible white rect | Visual: ${this.debugMode ? 'blue translucent rect' : 'hidden'} at (${Math.round(x)}, ${Math.round(y)}) size ${Math.round(width)}x${Math.round(height)}`);
+    }
+
+    update(time, delta) {
         // Обновление игрока (только если не взаимодействуем с объектами)
         if (!this.isInteracting) {
             this.player.update(this.cursors, this.keys);
@@ -827,7 +749,11 @@ export default class KitchenScene extends Phaser.Scene {
                         console.log('[KitchenScene] Bathroom door unlocked!');
                         this.isBathroomUnlocked = true; // Разблокируем ванную навсегда
                         this.isInteracting = false;
-                        this.addChatMessage('Карина', 'Ура! Дверь открылась! 🚪', '#00ff00');
+                        this.showFloatingText(this.player.x, this.player.y - 50, 'Ура! Дверь открылась!');
+
+                        // Сохраняем прогресс глобально
+                        if (!window.gameProgress) window.gameProgress = {};
+                        window.gameProgress.bathroomUnlocked = true;
 
                         // Переход в BathroomScene
                         this.cameras.main.fadeOut(1000, 0, 0, 0);
@@ -866,7 +792,7 @@ export default class KitchenScene extends Phaser.Scene {
                 this.ovenOverlay.open(() => {
                     console.log('[KitchenScene] Oven overlay closed');
                     this.isInteracting = false;
-                    this.addChatMessage('Карина', 'М-м-м, как вкусно пахнет! 🍗', '#ffaa00');
+                    this.showFloatingText(this.player.x, this.player.y - 50, 'М-м-м, как вкусно пахнет!');
                 });
                 break;
             case 'kettle':
@@ -906,7 +832,7 @@ export default class KitchenScene extends Phaser.Scene {
                 this.isKettleBoiling = true;
                 this.nextCloudIndex = 0;
                 this.kettleStartTime = this.time.now;
-                this.addChatMessage('Карина', 'Включила чайник! Сейчас закипит...', '#00ffff');
+                this.showFloatingText(this.player.x, this.player.y - 50, 'Включила чайник!');
 
                 // Генерируем 6 рандомных таймстампов для облачков (от 3 до 50 секунд)
                 this.cloudTimestamps = [];
@@ -954,7 +880,7 @@ export default class KitchenScene extends Phaser.Scene {
                     this.hasBoiledWater = true;
 
                     // Выводим сообщение о готовности
-                    this.addChatMessage('Карина', 'Вскипел! ☕️', '#00ff00');
+                    // Плавающий текст уже показывается ниже
 
                     // Показываем большой плавающий текст
                     const completedText = this.add.text(
@@ -998,7 +924,7 @@ export default class KitchenScene extends Phaser.Scene {
                 this.dishWashing.open(() => {
                     console.log('[KitchenScene] Dish washing mini-game closed');
                     this.isInteracting = false;
-                    this.addChatMessage('Карина', 'Ух! Отмыла до блеска! ✨', '#00ff00');
+                    this.showFloatingText(this.player.x, this.player.y - 50, 'Ух! Отмыла до блеска!');
                 });
                 break;
             case 'feed_reksi':
@@ -1027,7 +953,7 @@ export default class KitchenScene extends Phaser.Scene {
                     );
 
                     // Сообщение в чат
-                    this.addChatMessage('Карина', 'Рекси! Кушать подано! Идем кушать!', '#ffaa00');
+                    // Плавающий текст уже показывается выше
 
                     // Разблокируем управление
                     this.isInteracting = false;
@@ -1047,7 +973,7 @@ export default class KitchenScene extends Phaser.Scene {
                 this.fridgeOverlay.open(() => {
                     console.log('[KitchenScene] Fridge overlay closed');
                     this.isInteracting = false;
-                    this.addChatMessage('Карина', 'Хорошая коллекция магнитиков! 🌍', '#00ffff');
+                    this.showFloatingText(this.player.x, this.player.y - 50, 'Хорошая коллекция магнитиков!');
                 });
                 break;
             case 'kitchen_table':
@@ -1075,7 +1001,7 @@ export default class KitchenScene extends Phaser.Scene {
                     );
 
                     // Сообщение в чат
-                    this.addChatMessage('Карина', 'Последняя чипсина — самая вкусная.', '#ffaa00');
+                    // Плавающий текст уже показывается выше
                 } else {
                     // Вариант Б: огурчики
                     console.log('[KitchenTable] Playing voice_pickles');
@@ -1090,7 +1016,7 @@ export default class KitchenScene extends Phaser.Scene {
                     );
 
                     // Сообщение в чат
-                    this.addChatMessage('Карина', 'М-м-м... С солеными огурчиками!', '#ffaa00');
+                    // Плавающий текст уже показывается выше
                 }
                 break;
         }

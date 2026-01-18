@@ -24,6 +24,11 @@ export default class MirrorOverlay {
         this.isSteamy = isSteamy;
         this.onClose = onCloseCallback;
 
+        // Скрываем панель чата
+        if (window.chatPanel) {
+            window.chatPanel.hide();
+        }
+
         this.createContainer();
         this.setupKeyboardListener();
 
@@ -161,6 +166,11 @@ export default class MirrorOverlay {
         if (this.container) {
             this.container.remove();
             this.container = null;
+        }
+
+        // Показываем панель чата
+        if (window.chatPanel) {
+            window.chatPanel.show();
         }
 
         console.log('[MirrorOverlay] Closed');

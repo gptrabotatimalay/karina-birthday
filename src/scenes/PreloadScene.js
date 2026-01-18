@@ -6,21 +6,19 @@ export default class PreloadScene extends Phaser.Scene {
     }
 
     preload() {
-        const width = this.cameras.main.width;
-        const height = this.cameras.main.height;
-
-        // Текст загрузки ассетов
-        const loadingText = this.make.text({
-            x: width / 2,
-            y: height / 2 - 100,
-            text: 'Karina\'s RPG Quest\nЗагрузка ассетов...',
-            style: {
-                font: 'bold 28px Arial',
-                fill: '#ffffff',
-                align: 'center'
+        // Report loading progress to MainMenu
+        this.load.on('progress', (value) => {
+            if (window.gameLoadingState) {
+                window.gameLoadingState.progress = value;
             }
         });
-        loadingText.setOrigin(0.5);
+
+        this.load.on('complete', () => {
+            if (window.gameLoadingState) {
+                window.gameLoadingState.progress = 1;
+                window.gameLoadingState.isReady = true;
+            }
+        });
 
         // Background image (готовый арт комнаты)
         this.load.image('room_background', 'assets/room_background.jpeg');
@@ -34,8 +32,14 @@ export default class PreloadScene extends Phaser.Scene {
         // Corridor background (вертикальная картинка)
         this.load.image('corridor_bg', 'assets/corridor_background.jpg');
 
+        // Stoyka image for hallway interaction
+        this.load.image('stoyka', 'assets/ui/stoyka.png');
+
         // Cork board background for photo board
         this.load.image('cork_bg', 'assets/ui/cork_bg.png');
+
+        // Cat mask for depth system
+        this.load.image('cat_mask', 'assets/ui/cat_mask.png');
 
         // Предзагрузка всех фотографий для доски воспоминаний
         for (let i = 1; i <= 18; i++) {
@@ -90,6 +94,15 @@ export default class PreloadScene extends Phaser.Scene {
         // Звук туалета (мем)
         this.load.audio('voice_toilet', 'assets/sounds/voice_toilet.mp3');
 
+        // PES 2026: Аудио комментатора и фон стадиона
+        this.load.audio('stadium_crowd', 'assets/sounds/stadium_crowd.mp3');
+        this.load.audio('comm_intro', 'assets/sounds/comm_intro.mp3');
+        this.load.audio('comm_goal1', 'assets/sounds/comm_goal1.mp3');
+        this.load.audio('comm_goal2', 'assets/sounds/comm_goal2.mp3');
+        this.load.audio('comm_goal3', 'assets/sounds/comm_goal3.mp3');
+        this.load.audio('comm_goal4', 'assets/sounds/comm_goal4.mp3');
+        this.load.audio('comm_goal6', 'assets/sounds/comm_goal6.mp3');
+
         // Обработка ошибок загрузки
         this.load.on('loaderror', (file) => {
             console.warn(`Не удалось загрузить: ${file.key}`);
@@ -97,7 +110,28 @@ export default class PreloadScene extends Phaser.Scene {
     }
 
     create() {
-        // Успешная загрузка - переход к игре
+        // Wait for user to click START in MainMenu
+        if (window.gameLoadingState && window.gameLoadingState.waitingForStart) {
+            // Poll until user clicks start
+            const checkStart = () => {
+                if (!window.gameLoadingState.waitingForStart) {
+                    this.startGame();
+                } else {
+                    setTimeout(checkStart, 50);
+                }
+            };
+            checkStart();
+        } else {
+            // User already clicked start, proceed immediately
+            this.startGame();
+        }
+    }
+
+    startGame() {
+        // Record game start time
+        if (window.gameStats) {
+            window.gameStats.startTime = Date.now();
+        }
         this.scene.start('GameScene');
     }
 }

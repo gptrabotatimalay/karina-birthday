@@ -21,6 +21,11 @@ export default class DreamModal {
     open() {
         this.isOpen = true;
 
+        // Скрываем панель чата
+        if (window.chatPanel) {
+            window.chatPanel.hide();
+        }
+
         // Создаем контейнер
         this.container = document.createElement('div');
         this.container.id = 'dream-modal';
@@ -95,6 +100,11 @@ export default class DreamModal {
             this.container.parentNode.removeChild(this.container);
         }
         this.container = null;
+
+        // Показываем панель чата
+        if (window.chatPanel) {
+            window.chatPanel.show();
+        }
 
         console.log('[DreamModal] Closed');
 

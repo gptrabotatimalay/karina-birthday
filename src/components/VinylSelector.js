@@ -48,6 +48,11 @@ export default class VinylSelector {
     open() {
         this.isOpen = true; // Устанавливаем флаг
 
+        // Скрываем панель чата
+        if (window.chatPanel) {
+            window.chatPanel.hide();
+        }
+
         // Создаем контейнер
         this.container = document.createElement('div');
         this.container.id = 'vinyl-selector';
@@ -114,6 +119,11 @@ export default class VinylSelector {
             this.container.parentNode.removeChild(this.container);
         }
         this.container = null;
+
+        // Показываем панель чата
+        if (window.chatPanel) {
+            window.chatPanel.show();
+        }
 
         console.log('[VinylSelector] Closed');
 

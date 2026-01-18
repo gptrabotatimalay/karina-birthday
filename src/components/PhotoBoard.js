@@ -110,6 +110,11 @@ export default class PhotoBoard {
         this.focusedIndex = 0;
         this.zoomMode = false;
 
+        // Скрываем панель чата
+        if (window.chatPanel) {
+            window.chatPanel.hide();
+        }
+
         // Создаем контейнер
         this.container = document.createElement('div');
         this.container.id = 'photoboard-overlay';
@@ -204,6 +209,11 @@ export default class PhotoBoard {
             this.container.parentNode.removeChild(this.container);
         }
         this.container = null;
+
+        // Показываем панель чата
+        if (window.chatPanel) {
+            window.chatPanel.show();
+        }
 
         console.log('[PhotoBoard] Closed');
 

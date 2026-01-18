@@ -45,6 +45,11 @@ export default class DishWashing {
         this.cleanliness = 0;
         this.isVictory = false;
 
+        // Скрываем панель чата
+        if (window.chatPanel) {
+            window.chatPanel.hide();
+        }
+
         this.createContainer();
         this.setupAudio();
         this.setupKeyboardListener();
@@ -83,6 +88,11 @@ export default class DishWashing {
         if (this.container) {
             this.container.remove();
             this.container = null;
+        }
+
+        // Показываем панель чата
+        if (window.chatPanel) {
+            window.chatPanel.show();
         }
 
         // Вызываем колбэк

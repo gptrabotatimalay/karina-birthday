@@ -61,6 +61,11 @@ export default class BookshelfOverlay {
         this.isOpen = true;
         this.mode = 'carousel';
 
+        // Скрываем панель чата
+        if (window.chatPanel) {
+            window.chatPanel.hide();
+        }
+
         // Создаем контейнер
         this.container = document.createElement('div');
         this.container.id = 'bookshelf-overlay';
@@ -250,6 +255,11 @@ export default class BookshelfOverlay {
             this.container.parentNode.removeChild(this.container);
         }
         this.container = null;
+
+        // Показываем панель чата
+        if (window.chatPanel) {
+            window.chatPanel.show();
+        }
 
         console.log('[BookshelfOverlay] Closed');
 
