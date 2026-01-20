@@ -45,7 +45,7 @@ export default class DreamModal {
 
                 <!-- СЛОЙ 1: Рамка (z-index: 20) -->
                 <img
-                    src="/assets/ui/cloud_frame.png"
+                    src="/assets/ui/cloud_frame.webp"
                     class="cloud-frame"
                     alt="Cloud Frame"
                 />

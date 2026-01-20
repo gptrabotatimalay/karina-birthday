@@ -24,28 +24,28 @@ export default class BookshelfOverlay {
                 id: 'windup',
                 title: 'Хроники Заводной Птицы',
                 author: 'Харуки Мураками',
-                cover: '/assets/books/book_windup.jpeg',
+                cover: '/assets/books/book_windup.webp',
                 quote: "Деньги надо тратить, не думая при этом, приобретешь ты или потеряешь. А энергию – беречь на то, чего нельзя купить за деньги."
             },
             {
                 id: 'killing',
                 title: 'Убийство Командора',
                 author: 'Харуки Мураками',
-                cover: '/assets/books/book_killing.jpeg',
+                cover: '/assets/books/book_killing.webp',
                 quote: "Мариэ, ничего не говоря, просто посмотрела мне в глаза. Так заглядывают в дом, прижав лицо к стеклу."
             },
             {
                 id: 'afterdark',
                 title: 'Послемрак',
                 author: 'Харуки Мураками',
-                cover: '/assets/books/book_afterdark.jpeg',
+                cover: '/assets/books/book_afterdark.webp',
                 quote: "Если очень сильно хочешь что-то узнать, плати свою цену."
             },
             {
                 id: 'kafka',
                 title: 'Кафка на пляже',
                 author: 'Харуки Мураками',
-                cover: '/assets/books/book_kafka.jpeg',
+                cover: '/assets/books/book_kafka.webp',
                 quote: "Медленно вращается земля. Но мы здесь ни при чем, мы все живем во сне."
             }
         ];

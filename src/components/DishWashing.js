@@ -150,7 +150,7 @@ export default class DishWashing {
 
         // Слой 1: Чистая тарелка (снизу)
         const cleanPlate = document.createElement('img');
-        cleanPlate.src = '/assets/ui/plate_clean.png';
+        cleanPlate.src = '/assets/ui/plate_clean.webp';
         cleanPlate.style.cssText = `
             position: absolute;
             top: 0;
@@ -163,7 +163,7 @@ export default class DishWashing {
 
         // Слой 2: Грязная тарелка (сверху, с прозрачностью)
         this.dirtyPlateElement = document.createElement('img');
-        this.dirtyPlateElement.src = '/assets/ui/plate_dirty.png';
+        this.dirtyPlateElement.src = '/assets/ui/plate_dirty.webp';
         this.dirtyPlateElement.style.cssText = `
             position: absolute;
             top: 0;
