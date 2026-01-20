@@ -20,7 +20,7 @@ export default class DoorKeypad {
         this.hintText = null; // Текстовая подсказка (если есть, заменяет иконки)
 
         // Звук трещотки механического замка
-        this.lockClickAudio = new Audio('/assets/sounds/lock_click.mp3');
+        this.lockClickAudio = new Audio('assets/sounds/lock_click.mp3');
         this.lockClickAudio.volume = 0.3;
 
         // Привязываем методы к контексту

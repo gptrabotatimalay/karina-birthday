@@ -37,7 +37,7 @@ export default class DreamModal {
                 <!-- СЛОЙ 2: Видео (z-index: 10) -->
                 <video
                     id="dream-video"
-                    src="/assets/dream/dream_video.mp4"
+                    src="assets/dream/dream_video.mp4"
                     class="cloud-video"
                     autoplay
                     playsinline
@@ -45,7 +45,7 @@ export default class DreamModal {
 
                 <!-- СЛОЙ 1: Рамка (z-index: 20) -->
                 <img
-                    src="/assets/ui/cloud_frame.webp"
+                    src="assets/ui/cloud_frame.webp"
                     class="cloud-frame"
                     alt="Cloud Frame"
                 />

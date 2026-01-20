@@ -77,7 +77,7 @@ export default class BathtubOverlay {
 
         // Видео наполнения ванны
         this.video = document.createElement('video');
-        this.video.src = '/assets/video/bathtub_fill.mp4';
+        this.video.src = 'assets/video/bathtub_fill.mp4';
         this.video.style.cssText = `
             width: 100%;
             height: 100%;

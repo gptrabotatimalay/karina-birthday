@@ -25,9 +25,9 @@ export default class ConsoleOverlay {
 
         // Массив игр с обложками
         this.games = [
-            { id: 'snake', title: 'SNAKE PARTY', img: '/assets/ui/cover_snake.webp' },
-            { id: 'tictactoe', title: 'TIC-TAC-TOE', img: '/assets/ui/cover_tictactoe.webp' },
-            { id: 'pes', title: 'PES 2026', img: '/assets/ui/cover_pes.webp' } // ПОДСКАЗКА: финальный счет 5:0
+            { id: 'snake', title: 'SNAKE PARTY', img: 'assets/ui/cover_snake.webp' },
+            { id: 'tictactoe', title: 'TIC-TAC-TOE', img: 'assets/ui/cover_tictactoe.webp' },
+            { id: 'pes', title: 'PES 2026', img: 'assets/ui/cover_pes.webp' } // ПОДСКАЗКА: финальный счет 5:0
         ];
     }
 

@@ -69,7 +69,7 @@ export default class FridgeOverlay {
 
         // Изображение холодильника
         const fridgeImage = document.createElement('img');
-        fridgeImage.src = '/assets/ui/fridge_zoom.webp';
+        fridgeImage.src = 'assets/ui/fridge_zoom.webp';
         fridgeImage.style.cssText = `
             width: 100%;
             height: 100%;
