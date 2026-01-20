@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+    base: '/karina-birthday/',
     server: {
         port: 3000,
         open: true

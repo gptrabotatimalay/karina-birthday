@@ -17,32 +17,32 @@ export default class FootballMatch {
             currentClip: null,        // Текущая фраза комментатора
             playlist: [
                 {
-                    file: '/assets/sounds/comm_intro.mp3',
+                    file: './assets/sounds/comm_intro.mp3',
                     score: { karina: 0, dasha: 0 },
                     text: 'МАТЧ НАЧАЛСЯ!'
                 },
                 {
-                    file: '/assets/sounds/comm_goal1.mp3',
+                    file: './assets/sounds/comm_goal1.mp3',
                     score: { karina: 1, dasha: 0 },
                     text: 'Быстрый гол!'
                 },
                 {
-                    file: '/assets/sounds/comm_goal2.mp3',
+                    file: './assets/sounds/comm_goal2.mp3',
                     score: { karina: 2, dasha: 0 },
                     text: 'Даша спит?!'
                 },
                 {
-                    file: '/assets/sounds/comm_goal3.mp3',
+                    file: './assets/sounds/comm_goal3.mp3',
                     score: { karina: 3, dasha: 0 },
                     text: 'Разгром!'
                 },
                 {
-                    file: '/assets/sounds/comm_goal4.mp3',
+                    file: './assets/sounds/comm_goal4.mp3',
                     score: { karina: 4, dasha: 0 },
                     text: 'Неостановима!'
                 },
                 {
-                    file: '/assets/sounds/comm_goal6.mp3',
+                    file: './assets/sounds/comm_goal6.mp3',
                     score: { karina: 5, dasha: 0 },
                     text: 'ФИНАЛ!'
                 }
@@ -362,7 +362,7 @@ export default class FootballMatch {
      */
     async initAudio() {
         // 1. Запускаем фоновый шум стадиона (зациклен)
-        this.audio.crowd = new Audio('/assets/sounds/stadium_crowd.mp3');
+        this.audio.crowd = new Audio('./assets/sounds/stadium_crowd.mp3');
         this.audio.crowd.loop = true;
         this.audio.crowd.volume = 1.0;
         this.audio.crowd.play().catch(err => console.warn('Не удалось запустить фон стадиона:', err));

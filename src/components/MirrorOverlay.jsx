@@ -73,8 +73,8 @@ export default class MirrorOverlay {
         // Изображение зеркала (чистое или запотевшее)
         const mirrorImage = document.createElement('img');
         mirrorImage.src = this.isSteamy
-            ? '/assets/ui/mirror_foggy.png'
-            : '/assets/ui/mirror_clean.png';
+            ? './assets/ui/mirror_foggy.png'
+            : './assets/ui/mirror_clean.png';
         mirrorImage.style.cssText = `
             width: 100%;
             height: 100%;
