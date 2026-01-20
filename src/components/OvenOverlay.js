@@ -122,7 +122,7 @@ export default class OvenOverlay {
 
         // Видео элемент
         this.videoElement = document.createElement('video');
-        this.videoElement.src = 'assets/video/oven_chicken.mp4';
+        this.videoElement.src = './assets/video/oven_chicken.mp4';
         this.videoElement.autoplay = true;
         this.videoElement.loop = true;
         this.videoElement.playsInline = true; // Для мобильных устройств

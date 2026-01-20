@@ -371,7 +371,7 @@ export default class FinalVideo {
 
         // Создаем видео (без controls!)
         this.video = document.createElement('video');
-        this.video.src = 'assets/video/final_greeting.mp4';
+        this.video.src = './assets/video/final_greeting.mp4';
         this.video.autoplay = true;
         this.video.playsInline = true;
         this.video.muted = false;

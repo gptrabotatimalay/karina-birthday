@@ -15,26 +15,26 @@ export default class VinylSelector {
             {
                 id: 'queen',
                 name: 'Queen - Greatest Hits',
-                cover: 'assets/vinyls/cover_queen.webp',
-                track: 'assets/music/song_queen.mp3'
+                cover: './assets/vinyls/cover_queen.webp',
+                track: './assets/music/song_queen.mp3'
             },
             {
                 id: 'panic',
                 name: 'Panic! At The Disco',
-                cover: 'assets/vinyls/cover_panic.webp',
-                track: 'assets/music/song_panic.mp3'
+                cover: './assets/vinyls/cover_panic.webp',
+                track: './assets/music/song_panic.mp3'
             },
             {
                 id: 'am',
                 name: 'Arctic Monkeys - AM',
-                cover: 'assets/vinyls/cover_am.webp',
-                track: 'assets/music/song_am.mp3'
+                cover: './assets/vinyls/cover_am.webp',
+                track: './assets/music/song_am.mp3'
             },
             {
                 id: 'ghibli',
                 name: 'Studio Ghibli Collection',
-                cover: 'assets/vinyls/cover_ghibli.webp',
-                track: 'assets/music/song_ghibli.mp3'
+                cover: './assets/vinyls/cover_ghibli.webp',
+                track: './assets/music/song_ghibli.mp3'
             }
         ];
 

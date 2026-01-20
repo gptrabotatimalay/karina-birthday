@@ -21,25 +21,25 @@ export default class PreloadScene extends Phaser.Scene {
         });
 
         // Background image (готовый арт комнаты)
-        this.load.image('room_background', 'assets/room_background.webp');
+        this.load.image('room_background', './assets/room_background.webp');
 
         // Kitchen background
-        this.load.image('kitchen_bg', 'assets/kichen_background.webp');
+        this.load.image('kitchen_bg', './assets/kichen_background.webp');
 
         // Bathroom background (вертикальная картинка)
-        this.load.image('bathroom_bg', 'assets/bathroom_background.webp');
+        this.load.image('bathroom_bg', './assets/bathroom_background.webp');
 
         // Corridor background (вертикальная картинка)
-        this.load.image('corridor_bg', 'assets/corridor_background.webp');
+        this.load.image('corridor_bg', './assets/corridor_background.webp');
 
         // Stoyka image for hallway interaction
-        this.load.image('stoyka', 'assets/ui/stoyka.webp');
+        this.load.image('stoyka', './assets/ui/stoyka.webp');
 
         // Cork board background for photo board
-        this.load.image('cork_bg', 'assets/ui/cork_bg.webp');
+        this.load.image('cork_bg', './assets/ui/cork_bg.webp');
 
         // Cat mask for depth system
-        this.load.image('cat_mask', 'assets/ui/cat_mask.webp');
+        this.load.image('cat_mask', './assets/ui/cat_mask.webp');
 
         // Предзагрузка всех фотографий для доски воспоминаний
         for (let i = 1; i <= 18; i++) {
@@ -49,59 +49,59 @@ export default class PreloadScene extends Phaser.Scene {
         console.log('[PreloadScene] Loading background and characters...');
 
         // Спрайт-листы персонажей (16×32: голова + тело)
-        this.load.spritesheet('karina', 'assets/characters/Karina wasd.webp', {
+        this.load.spritesheet('karina', './assets/characters/Karina wasd.webp', {
             frameWidth: 16,
             frameHeight: 32
         });
 
         // Анимации ходьбы Карины
-        this.load.spritesheet('karina-run', 'assets/characters/Karina run.webp', {
+        this.load.spritesheet('karina-run', './assets/characters/Karina run.webp', {
             frameWidth: 16,
             frameHeight: 32
         });
 
         // Даша (сидит на пуфике) - спрайты 32x32
-        this.load.spritesheet('dasha', 'assets/characters/Dasha_sit.webp', {
+        this.load.spritesheet('dasha', './assets/characters/Dasha_sit.webp', {
             frameWidth: 32,
             frameHeight: 32
         });
 
         // Звуки кошки Рекси
-        this.load.audio('purr', 'assets/sounds/purr.mp3');
-        this.load.audio('meow_short', 'assets/sounds/meow_short.mp3');
-        this.load.audio('meow_long', 'assets/sounds/meow_long.mp3');
+        this.load.audio('purr', './assets/sounds/purr.mp3');
+        this.load.audio('meow_short', './assets/sounds/meow_short.mp3');
+        this.load.audio('meow_long', './assets/sounds/meow_long.mp3');
 
         // Звук зевка для механики сна
-        this.load.audio('yawn', 'assets/sounds/yawn.mp3');
+        this.load.audio('yawn', './assets/sounds/yawn.mp3');
 
         // Звук электрического чайника (полный цикл: щелчок -> кипение -> щелчок)
-        this.load.audio('kettle_sound', 'assets/sounds/kettle_full.mp3');
+        this.load.audio('kettle_sound', './assets/sounds/kettle_full.mp3');
 
         // Голосовая озвучка героини
-        this.load.audio('voice_chips', 'assets/sounds/voice_chips.mp3');
-        this.load.audio('voice_pickles', 'assets/sounds/voice_pickles.mp3');
+        this.load.audio('voice_chips', './assets/sounds/voice_chips.mp3');
+        this.load.audio('voice_pickles', './assets/sounds/voice_pickles.mp3');
 
         // Озвучка пробуждения после сна (4 варианта)
-        this.load.audio('dream_huge', 'assets/sounds/dream_huge.mp3');
-        this.load.audio('dream_fat', 'assets/sounds/dream_fat.mp3');
-        this.load.audio('dream_world', 'assets/sounds/dream_world.mp3');
-        this.load.audio('dream_games', 'assets/sounds/dream_games.mp3');
+        this.load.audio('dream_huge', './assets/sounds/dream_huge.mp3');
+        this.load.audio('dream_fat', './assets/sounds/dream_fat.mp3');
+        this.load.audio('dream_world', './assets/sounds/dream_world.mp3');
+        this.load.audio('dream_games', './assets/sounds/dream_games.mp3');
 
         // Звуки кормления Рекси
-        this.load.audio('pouring', 'assets/sounds/pouring.mp3');
-        this.load.audio('voice_feed', 'assets/sounds/voice_feed.mp3');
+        this.load.audio('pouring', './assets/sounds/pouring.mp3');
+        this.load.audio('voice_feed', './assets/sounds/voice_feed.mp3');
 
         // Звук туалета (мем)
-        this.load.audio('voice_toilet', 'assets/sounds/voice_toilet.mp3');
+        this.load.audio('voice_toilet', './assets/sounds/voice_toilet.mp3');
 
         // PES 2026: Аудио комментатора и фон стадиона
-        this.load.audio('stadium_crowd', 'assets/sounds/stadium_crowd.mp3');
-        this.load.audio('comm_intro', 'assets/sounds/comm_intro.mp3');
-        this.load.audio('comm_goal1', 'assets/sounds/comm_goal1.mp3');
-        this.load.audio('comm_goal2', 'assets/sounds/comm_goal2.mp3');
-        this.load.audio('comm_goal3', 'assets/sounds/comm_goal3.mp3');
-        this.load.audio('comm_goal4', 'assets/sounds/comm_goal4.mp3');
-        this.load.audio('comm_goal6', 'assets/sounds/comm_goal6.mp3');
+        this.load.audio('stadium_crowd', './assets/sounds/stadium_crowd.mp3');
+        this.load.audio('comm_intro', './assets/sounds/comm_intro.mp3');
+        this.load.audio('comm_goal1', './assets/sounds/comm_goal1.mp3');
+        this.load.audio('comm_goal2', './assets/sounds/comm_goal2.mp3');
+        this.load.audio('comm_goal3', './assets/sounds/comm_goal3.mp3');
+        this.load.audio('comm_goal4', './assets/sounds/comm_goal4.mp3');
+        this.load.audio('comm_goal6', './assets/sounds/comm_goal6.mp3');
 
         // Обработка ошибок загрузки
         this.load.on('loaderror', (file) => {

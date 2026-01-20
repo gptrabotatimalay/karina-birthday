@@ -132,8 +132,8 @@ export default class ChatPanel {
         const messageEl = document.createElement('div');
         messageEl.className = `chat-message ${sender}`;
         const avatarUrl = sender === 'dasha'
-            ? 'assets/ui/dasha_avatar.webp'
-            : 'assets/ui/karina_avatar.webp';
+            ? './assets/ui/dasha_avatar.webp'
+            : './assets/ui/karina_avatar.webp';
         messageEl.innerHTML = `
             <div class="message-avatar">
                 <img src="${avatarUrl}" alt="${sender === 'dasha' ? 'Даша' : 'Карина'}">

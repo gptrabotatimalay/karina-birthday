@@ -518,7 +518,7 @@ export default class HallwayScene extends Phaser.Scene {
         if (this.stoykaInspect) return;
 
         this.stoykaInspect = new SimpleInspect({
-            imageSrc: 'assets/ui/stoyka.webp',
+            imageSrc: './assets/ui/stoyka.webp',
             text: 'Ооо... Соления... 😋',
             onClose: () => {
                 this.stoykaInspect = null;
