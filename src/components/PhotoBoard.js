@@ -67,7 +67,7 @@ export default class PhotoBoard {
 
             photos.push({
                 id: i + 1,
-                src: `./assets/photos/mem${i + 1}.jpeg`,
+                src: `./assets/photos/mem${i + 1}.webp`,
                 caption: i === 10 ? '⭐' : this.generateCaption(), // Фото #11 имеет звездочку в качестве подписи
                 left: positions[i].left,
                 top: positions[i].top,
