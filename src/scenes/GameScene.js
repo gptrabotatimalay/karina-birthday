@@ -790,7 +790,7 @@ export default class GameScene extends Phaser.Scene {
 
                 switch(randomReaction) {
                     case 1:
-                        message = 'Мррр'; // ПОДСКАЗКА: ровно 4 буквы (цифра 4)
+                        message = 'Мрррр'; // ПОДСКАЗКА: ровно 4 буквы "р" (цифра 4)
                         soundKey = 'purr';
                         break;
                     case 2:
